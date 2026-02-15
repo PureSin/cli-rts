@@ -14,6 +14,7 @@ CLI-RTS is a Real-Time Strategy Visualization tool that hooks into coding AI age
 
 - **Rendering target**: Local web UI — the game runs in the browser
 - **Communication**: Persistent daemon process, async hooks so we never block agents
+- **Hook location**: Project-level `.claude/settings.json` (committable, per-repo)
 - **Multi-agent**: Support multiple agent types (Claude Code, Gemini CLI, etc.) in the same repo
 - **Concurrent sessions**: Treated as different "players" in the RTS game
 - **Scope**: Single repo, local machine only
@@ -186,7 +187,7 @@ No dedicated mock framework exists for Claude Code hooks. Common approaches:
 
 ### Open Source Hook Projects (TODO: review)
 
-- [ ] **disler/claude-code-hooks-multi-agent-observability** — Most relevant: hook→HTTP→Bun server→SQLite→WebSocket→Vue dashboard. Same architecture pattern we're using. Study their event forwarding script, server design, and WebSocket broadcast.
+- [x] **disler/claude-code-hooks-multi-agent-observability** — Investigated. Uses HTTP POST from Python hook scripts to a Bun server with SQLite + WebSocket→Vue. Key learnings: `send_event.py` pattern for hook→server forwarding, always exit 0, promote event-specific fields as top-level. We differ in using in-memory game state (not event log), game state patches (not raw events), and a compiled binary (not Python/uv). See: `references/multi-agent-observability/ANALYSIS.md`
 - [ ] **disler/claude-code-hooks-mastery** (3k+ stars) — Comprehensive 13-hook Python/uv reference. Study their hook script structure, JSON logging, and event handling patterns.
 - [ ] **carlrannaberg/claudekit** (593 stars) — Compiled TypeScript toolkit. Study their custom Bash test framework (assertions, mocking, fixtures) and hook profiling system.
 - [ ] **karanb192/claude-code-hooks** (143 stars) — JS hook collection with Node.js test runner. Study their per-event-type test organization and safety-level tiering.
