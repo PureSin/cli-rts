@@ -127,6 +127,39 @@ Questions:
 
 Status: **NOT STARTED**
 
+## Ecosystem Research
+
+### Architecture Patterns
+
+Five patterns found in the wild for building on Claude Code hooks:
+
+1. **Stateless scripts** (most common) — Standalone Python/JS files in `.claude/hooks/`. Each invocation reads stdin, processes, exits. No shared state. (e.g., `disler/claude-code-hooks-mastery`, 3k+ stars)
+2. **Compiled executable** — All hooks bundled into one binary for performance. Avoids shell startup overhead. (e.g., `carlrannaberg/claudekit`, TypeScript→JS)
+3. **Hook→Server daemon** (most relevant to us) — Stateless hook scripts POST events via HTTP to a long-running server, which stores in SQLite and pushes via WebSocket to a web UI. Proven pipeline: hook → HTTP POST → Bun server → SQLite → WebSocket → Vue dashboard.
+4. **Copy-paste collections** — Ready-to-use scripts organized by event type
+5. **CLI tool as hook** — A compiled binary called by multiple hook events, reading shared state from a data file
+
+**Our architecture matches pattern #3.** The observability dashboard project proves the full pipeline works end-to-end.
+
+### Testing Patterns
+
+No dedicated mock framework exists for Claude Code hooks. Common approaches:
+
+- **Manual stdin piping**: `echo '{"tool_name":"Bash",...}' | ./hook.sh` + check exit code
+- **Custom Bash test framework** (claudekit): assertions (`assert_equals`, `assert_json_field`), mocking of `git`/`npm`, isolated temp dirs
+- **Node.js test runner**: unit tests per event type with stdin/stdout flow testing
+- **System validation scripts**: start server, send mock events via curl, verify dashboard
+- **Structured JSON logging**: every hook writes to a log file as both audit trail and validation
+
+### Pitfalls to Avoid
+
+- Shell profile `echo` statements break JSON parsing on stdout
+- Stop hooks without `stop_hook_active` check → infinite loops
+- Exit code 2 ignores all JSON output (pick one signaling approach)
+- Settings changes need session restart (snapshot captured at startup)
+- Slow hooks (>5s) degrade UX — always use `async: true` for observability hooks
+- Unbounded context injection wastes tokens (claudekit caps at 10k chars)
+
 ## Specs
 
 ### Game State Spec
@@ -150,3 +183,12 @@ Status: **NOT STARTED**
 - Uses `.state.json` for persistence across hook invocations
 - Demonstrates async hook execution to avoid blocking the agent
 - See: `peon-ping/ENGINE-DESIGN.md`
+
+### Open Source Hook Projects (TODO: review)
+
+- [ ] **disler/claude-code-hooks-multi-agent-observability** — Most relevant: hook→HTTP→Bun server→SQLite→WebSocket→Vue dashboard. Same architecture pattern we're using. Study their event forwarding script, server design, and WebSocket broadcast.
+- [ ] **disler/claude-code-hooks-mastery** (3k+ stars) — Comprehensive 13-hook Python/uv reference. Study their hook script structure, JSON logging, and event handling patterns.
+- [ ] **carlrannaberg/claudekit** (593 stars) — Compiled TypeScript toolkit. Study their custom Bash test framework (assertions, mocking, fixtures) and hook profiling system.
+- [ ] **karanb192/claude-code-hooks** (143 stars) — JS hook collection with Node.js test runner. Study their per-event-type test organization and safety-level tiering.
+- [ ] **nizos/tdd-guard** — TDD enforcement via hooks. Study their cross-framework reporter pattern (shared data file consumed by a single hook binary).
+- [ ] **anthropics/claude-code examples/hooks/** — Official reference implementation (`bash_command_validator_example.py`). Study the canonical guard/validator pattern.
