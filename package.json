@@ -1,0 +1,21 @@
+{
+  "name": "cli-rts",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "RTS game state from Claude Code hook events",
+  "bin": {
+    "cli-rts": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "commander": "^13.0.0"
+  }
+}
