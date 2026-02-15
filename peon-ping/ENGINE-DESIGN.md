@@ -5,7 +5,7 @@ How peon-ping hooks into Claude Code and turns IDE lifecycle events into sound e
 ## Architecture Diagram
 
 <p align="center">
-<img src="docs/engine-diagram.svg" alt="peon-ping engine architecture" width="900">
+<img src="engine-diagram.svg" alt="peon-ping engine architecture" width="900">
 </p>
 
 ## How Hooking Works

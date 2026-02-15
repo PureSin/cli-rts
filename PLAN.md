@@ -10,12 +10,143 @@ CLI-RTS is a Real-Time Strategy Visualization tool that hooks into coding AI age
 - Treat each agent/subagent as a "unit" in an RTS-style visualization
 - Map agent activities to different unit types based on what the agent is doing (e.g., exploring code, writing files, running tests)
 
-### Open Questions
+### Key Decisions
 
-- How to hook into Claude Code's state (see Research section below)
-- What unit types map to which agent activities
-- What rendering approach to use for the visualization (terminal UI, web, etc.)
+- **Rendering target**: Local web UI — the game runs in the browser
+- **Communication**: Persistent daemon process, async hooks so we never block agents
+- **Multi-agent**: Support multiple agent types (Claude Code, Gemini CLI, etc.) in the same repo
+- **Concurrent sessions**: Treated as different "players" in the RTS game
+- **Scope**: Single repo, local machine only
+- **Visual fidelity**: StarCraft Brood War level (isometric 2D, pixel art sprites)
+- **Time**: Real-time visualization of live agent activity
 
-## Research
+## Risks & Unknowns (ranked by severity)
 
-TODO: Investigate how other projects integrate with / read state from Claude Code.
+### Existential Risks
+
+**1. ~~Hook payload data richness~~ — RESOLVED**
+Confirmed via official docs: PreToolUse/PostToolUse include `tool_name` + full `tool_input` (file paths, commands, patterns). SubagentStart/SubagentStop provide `agent_id` + `agent_type` for parent→child correlation. All 14 event types have well-documented payloads. See `GAME-STATE-SPEC.md` for the full mapping.
+
+**2. Subagent correlation**
+The RTS feel comes from one player commanding multiple units. When a parent session spawns a Task, we need to link the child's events back to the parent. If `session_id` changes for subagents with no parent reference, they'd appear as separate players instead of units under one commander.
+
+### High Risk
+
+**3. Repo-to-map translation**
+No obvious "right" mapping from a directory tree to 2D terrain. Needs to work for repos of wildly different sizes and structures. Likely requires several design iterations.
+
+**4. Art asset pipeline at BW fidelity**
+BW has thousands of frames of hand-pixeled animation. Even a minimal unit set (5 types x idle/move/action x 8 directions) is 120+ sprite frames. Source and pipeline TBD.
+
+### Medium Risk
+
+**5. Real-time pipeline latency**
+Hook → IPC → daemon → WebSocket → browser. Needs <200ms end-to-end for real-time feel.
+
+**6. Game loop vs event-driven tension**
+RTS games run continuous render loops. Our data is sporadic hook events. Between events, units need believable behavior (idle animations, movement interpolation) to feel alive.
+
+### Lower Risk
+
+**7. Concurrent session state management** — Standard engineering, needs clean architecture.
+
+**8. Multi-agent adapter pattern** — Entire CLI already solved this. We can borrow their registry/interface approach.
+
+## Research Sprints
+
+### Sprint 1: Prove the data exists (de-risks #1 and #2)
+
+Goal: Determine exactly what data Claude Code provides in each hook event payload.
+
+Questions:
+- [x] What fields are in each hook event's JSON payload?
+- [x] Does `PreToolUse`/`PostToolUse` include tool name and parameters?
+- [x] When a Task is spawned, does the subagent get a linked session_id or a completely new one?
+- [x] Can we correlate subagent events back to their parent session?
+
+Status: **COMPLETE** — See findings below.
+
+#### Findings
+
+**14 hook event types available** (more than reference projects used):
+`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PermissionRequest`, `PostToolUse`, `PostToolUseFailure`, `Notification`, `SubagentStart`, `SubagentStop`, `Stop`, `TeammateIdle`, `TaskCompleted`, `PreCompact`, `SessionEnd`
+
+**Common fields in ALL payloads:**
+`session_id`, `transcript_path`, `cwd`, `permission_mode`, `hook_event_name`
+
+**PreToolUse/PostToolUse payloads include:**
+- `tool_name` — exact tool name (Bash, Read, Write, Edit, Glob, Grep, Task, WebFetch, WebSearch, mcp__*)
+- `tool_input` — complete input parameters (file_path, command, pattern, etc.)
+- `tool_use_id` — unique ID per tool invocation (correlates Pre with Post)
+- PostToolUse also includes `tool_response` with the tool's output
+
+**Subagent correlation is possible:**
+- `SubagentStart` fires with `agent_id` (unique) + `agent_type` (Explore, Bash, Plan, etc.)
+- `SubagentStop` fires with the **parent's `session_id`** + the subagent's `agent_id`
+- This lets us build parent→child trees for the multi-unit RTS model
+- Tool events (PreToolUse/PostToolUse) fire for both parent and subagent tool calls
+
+**Async is supported:** All command hooks can set `"async": true` to avoid blocking agents.
+
+**Conclusion:** The hook data is rich enough to drive the full RTS visualization — unit types from tool_name, map positions from file paths in tool_input, player identity from session_id, and command hierarchy from SubagentStart/SubagentStop correlation.
+
+### Sprint 2: Prove the map concept (de-risks #3)
+
+Goal: Figure out how to translate a codebase into a compelling 2D RTS map.
+
+Questions:
+- [ ] What existing code-to-spatial-visualization tools exist? (Gource, CodeCity, repo-visualizer)
+- [ ] What mapping strategies work? (directory → region, import graph → proximity, file type → terrain)
+- [ ] Isometric (like BW) or top-down?
+- [ ] How to handle repos of very different sizes without sparse/dense extremes?
+
+Status: **NOT STARTED**
+
+### Sprint 3: Prove the art is feasible (de-risks #4)
+
+Goal: Determine if we can achieve BW-level visual fidelity and what asset pipeline to use.
+
+Questions:
+- [ ] What open-source RTS sprite packs exist? (OpenGameArt, itch.io)
+- [ ] What's the minimum viable unit set for MVP?
+- [ ] Can we prototype one unit (idle/move/action) in Phaser or PixiJS?
+- [ ] Can we get "BW feel" without commissioning custom pixel art?
+
+Status: **NOT STARTED**
+
+### Sprint 4: Architecture & stack (informed by sprints 1-3)
+
+Goal: Choose the tech stack and design the system architecture.
+
+Questions:
+- [ ] Daemon language (Node.js, Go, Python, Rust)?
+- [ ] IPC mechanism (Unix socket, localhost HTTP, named pipe)?
+- [ ] Web game framework (Phaser, PixiJS, raw Canvas/WebGL)?
+- [ ] How does the event-driven data feed into a continuous game loop?
+- [ ] How to handle multi-agent adapter registration (borrow from Entire's pattern)?
+
+Status: **NOT STARTED**
+
+## Specs
+
+### Game State Spec
+- Hook-to-RTS state mapping for all 14 Claude Code hook events
+- Full TypeScript interfaces for game state (Player, Unit, Map, Objectives, Events)
+- WebSocket protocol design (snapshot + JSON Patch diffs)
+- Hook installation configuration (all async)
+- See: `GAME-STATE-SPEC.md`
+
+## Reference Projects
+
+### Entire CLI
+- Go CLI that hooks into Claude Code and Gemini CLI via their hook systems
+- Uses agent abstraction layer with registry pattern for multi-agent support
+- Captures state via hook JSON payloads + post-hoc transcript parsing
+- See: `entire-cli/entire-ci.md`
+
+### peon-ping
+- Shell script that hooks into Claude Code to play sound effects on agent lifecycle events
+- Maps hook events to sound categories (session.start, task.complete, input.required)
+- Uses `.state.json` for persistence across hook invocations
+- Demonstrates async hook execution to avoid blocking the agent
+- See: `peon-ping/ENGINE-DESIGN.md`
