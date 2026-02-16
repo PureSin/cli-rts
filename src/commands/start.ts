@@ -17,8 +17,15 @@ export async function startCommand(port: number): Promise<void> {
 
   const state = createEmptyState(cwd);
 
+  // Serialize file writes so concurrent events don't race
+  let writeChain: Promise<void> = Promise.resolve();
+  function queueStateWrite(): void {
+    writeChain = writeChain.then(() => writeStateFile(statePath, state)).catch(() => {});
+  }
+
   // Write initial state
-  await writeStateFile(statePath, state);
+  queueStateWrite();
+  await writeChain;
 
   const server = http.createServer(async (req, res) => {
     // CORS headers for future browser UI
@@ -37,7 +44,7 @@ export async function startCommand(port: number): Promise<void> {
         const body = await readBody(req);
         const { eventType, payload } = JSON.parse(body);
         const event = handleEvent(state, eventType, payload ?? {});
-        await writeStateFile(statePath, state);
+        queueStateWrite();
 
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: true, tick: state.tick, event: event.id }));
@@ -64,6 +71,15 @@ export async function startCommand(port: number): Promise<void> {
     res.end("Not found");
   });
 
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`Error: port ${port} is already in use. Is another cli-rts daemon running?`);
+      console.error(`Try: curl http://127.0.0.1:${port}/health`);
+      process.exit(1);
+    }
+    throw err;
+  });
+
   server.listen(port, "127.0.0.1", () => {
     console.log(`cli-rts daemon listening on http://127.0.0.1:${port}`);
     console.log(`  POST /events  — receive hook events`);
@@ -81,10 +97,21 @@ export async function startCommand(port: number): Promise<void> {
   process.on("SIGTERM", shutdown);
 }
 
+const MAX_BODY_SIZE = 1024 * 1024; // 1 MB
+
 function readBody(req: http.IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     let data = "";
-    req.on("data", (chunk) => { data += chunk; });
+    let size = 0;
+    req.on("data", (chunk: string | Buffer) => {
+      size += typeof chunk === "string" ? chunk.length : chunk.byteLength;
+      if (size > MAX_BODY_SIZE) {
+        req.destroy();
+        reject(new Error("Request body too large"));
+        return;
+      }
+      data += chunk;
+    });
     req.on("end", () => resolve(data));
     req.on("error", reject);
   });

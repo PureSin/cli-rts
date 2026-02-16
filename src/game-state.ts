@@ -1,3 +1,5 @@
+import { realpathSync } from "node:fs";
+
 // ── Types ──
 
 export type UnitType =
@@ -223,9 +225,15 @@ export function extractTarget(toolName: string, toolInput: Record<string, unknow
 
 // Derive map region from a file path
 export function pathToRegion(filePath: string, repoPath: string): string {
-  const relative = filePath.startsWith(repoPath)
-    ? filePath.slice(repoPath.length).replace(/^\//, "")
-    : filePath.replace(/^\//, "");
+  // Resolve symlinks (e.g. macOS /tmp → /private/tmp) for reliable prefix stripping
+  let resolvedFile = filePath;
+  let resolvedRepo = repoPath;
+  try { resolvedFile = realpathSync(filePath); } catch { /* file may not exist yet */ }
+  try { resolvedRepo = realpathSync(repoPath); } catch { /* use as-is */ }
+
+  const relative = resolvedFile.startsWith(resolvedRepo)
+    ? resolvedFile.slice(resolvedRepo.length).replace(/^\//, "")
+    : resolvedFile.replace(/^\//, "");
 
   const parts = relative.split("/");
   // Use first two directory levels as region, e.g. "src/auth"

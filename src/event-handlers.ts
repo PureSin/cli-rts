@@ -2,6 +2,7 @@ import {
   GameState,
   GameEvent,
   GameEventType,
+  TerrainType,
   Player,
   Unit,
   createUnit,
@@ -75,7 +76,7 @@ function ensureRegion(state: GameState, region: string): void {
   }
 }
 
-function inferTerrain(region: string): import("./game-state.js").TerrainType {
+function inferTerrain(region: string): TerrainType {
   if (!region || region === "base") return "base";
   const lower = region.toLowerCase();
   if (lower.startsWith("src") || lower.startsWith("lib")) return "source";
@@ -180,8 +181,13 @@ export function handlePreToolUse(state: GameState, payload: Record<string, unkno
   const toolName = (payload.tool_name as string) ?? "unknown";
   const toolInput = (payload.tool_input as Record<string, unknown>) ?? {};
   const toolUseId = (payload.tool_use_id as string) ?? `tool-${Date.now()}`;
+  const agentId = payload.agent_id as string | undefined;
 
-  const result = findUnitForSession(state, sessionId);
+  const result = agentId
+    ? findUnitByAgentId(state, sessionId, agentId)
+    : findUnitForSession(state, sessionId);
+  const unitId = agentId ?? sessionId;
+
   if (result) {
     const { player, unit } = result;
     const target = extractTarget(toolName, toolInput);
@@ -216,7 +222,7 @@ export function handlePreToolUse(state: GameState, payload: Record<string, unkno
     if (toolName === "Bash") player.stats.bashCommandsRun++;
   }
 
-  return addEvent(state, "unit_action_start", sessionId, sessionId, `${toolName} → ${extractTarget(toolName, (payload.tool_input as Record<string, unknown>) ?? {})}`, {
+  return addEvent(state, "unit_action_start", sessionId, unitId, `${toolName} → ${extractTarget(toolName, (payload.tool_input as Record<string, unknown>) ?? {})}`, {
     toolName,
     toolUseId,
   });
@@ -226,8 +232,13 @@ export function handlePostToolUse(state: GameState, payload: Record<string, unkn
   bumpTick(state);
   const sessionId = payload.session_id as string;
   const toolUseId = (payload.tool_use_id as string) ?? "";
+  const agentId = payload.agent_id as string | undefined;
 
-  const result = findUnitForSession(state, sessionId);
+  const result = agentId
+    ? findUnitByAgentId(state, sessionId, agentId)
+    : findUnitForSession(state, sessionId);
+  const unitId = agentId ?? sessionId;
+
   if (result) {
     const { unit } = result;
     if (unit.targetPosition) {
@@ -238,7 +249,7 @@ export function handlePostToolUse(state: GameState, payload: Record<string, unkn
     unit.currentAction = null;
   }
 
-  return addEvent(state, "unit_action_complete", sessionId, sessionId, `Action complete (${(payload.tool_name as string) ?? "tool"})`, {
+  return addEvent(state, "unit_action_complete", sessionId, unitId, `Action complete (${(payload.tool_name as string) ?? "tool"})`, {
     toolUseId,
   });
 }
@@ -246,8 +257,13 @@ export function handlePostToolUse(state: GameState, payload: Record<string, unkn
 export function handlePostToolUseFailure(state: GameState, payload: Record<string, unknown>): GameEvent {
   bumpTick(state);
   const sessionId = payload.session_id as string;
+  const agentId = payload.agent_id as string | undefined;
 
-  const result = findUnitForSession(state, sessionId);
+  const result = agentId
+    ? findUnitByAgentId(state, sessionId, agentId)
+    : findUnitForSession(state, sessionId);
+  const unitId = agentId ?? sessionId;
+
   if (result) {
     const { player, unit } = result;
     unit.status = "failed";
@@ -256,7 +272,7 @@ export function handlePostToolUseFailure(state: GameState, payload: Record<strin
   }
 
   const error = (payload.error as string) ?? "unknown error";
-  return addEvent(state, "unit_action_failed", sessionId, sessionId, `Action failed: ${error.slice(0, 80)}`, {
+  return addEvent(state, "unit_action_failed", sessionId, unitId, `Action failed: ${error.slice(0, 80)}`, {
     error,
     toolName: payload.tool_name,
   });
@@ -295,8 +311,13 @@ export function handleSubagentStop(state: GameState, payload: Record<string, unk
   const player = state.players[sessionId];
   if (player && player.units[agentId]) {
     player.units[agentId].status = "despawning";
-    // Remove after marking despawning (visualization can animate first)
-    delete player.units[agentId];
+    player.units[agentId].currentAction = null;
+    // Schedule removal so consumers can see the despawning state
+    setTimeout(() => {
+      if (player.units[agentId]?.status === "despawning") {
+        delete player.units[agentId];
+      }
+    }, 2000);
   }
 
   return addEvent(state, "unit_despawned", sessionId, agentId, `Subagent despawned: ${(payload.agent_type as string) ?? "unknown"}`, {

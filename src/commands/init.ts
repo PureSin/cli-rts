@@ -1,6 +1,10 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const HOOK_EVENT_TYPES = [
   "SessionStart",
@@ -50,10 +54,24 @@ interface Settings {
   [key: string]: unknown;
 }
 
+function resolveCliCommand(): string {
+  // Use the global `cli-rts` if it's installed (e.g. via npm link / npm install -g)
+  // Otherwise fall back to `node <absolute path to dist/cli.js>`
+  const cliPath = resolve(__dirname, "..", "cli.js");
+  try {
+    const { execSync } = require("node:child_process") as typeof import("node:child_process");
+    execSync("cli-rts --version", { stdio: "ignore" });
+    return "cli-rts";
+  } catch {
+    return `node ${cliPath}`;
+  }
+}
+
 export async function initCommand(): Promise<void> {
   const cwd = process.cwd();
   const claudeDir = join(cwd, ".claude");
   const settingsPath = join(claudeDir, "settings.json");
+  const cliCmd = resolveCliCommand();
 
   // Ensure .claude/ exists
   if (!existsSync(claudeDir)) {
@@ -81,7 +99,7 @@ export async function initCommand(): Promise<void> {
     const slug = EVENT_SLUG[eventType];
     const ourHook: HookEntry = {
       type: "command",
-      command: `cli-rts emit ${slug}`,
+      command: `${cliCmd} emit ${slug}`,
       async: true,
       __cli_rts: true,
     };
