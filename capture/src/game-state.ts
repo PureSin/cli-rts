@@ -63,9 +63,11 @@ export interface MapPosition {
 export interface MapRegion {
   id: string;
   label: string;
+  parentId?: string;
   bounds: { x: number; y: number; width: number; height: number };
   terrain: TerrainType;
   fileCount: number;
+  files: string[];
   children: string[];
 }
 

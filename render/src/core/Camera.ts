@@ -19,6 +19,14 @@ export class Camera {
     return this._zoom;
   }
 
+  get worldX() {
+    return this.world.x;
+  }
+
+  get worldY() {
+    return this.world.y;
+  }
+
   centerOn(x: number, y: number) {
     this.world.x = this.canvas.width / 2 - x * this._zoom;
     this.world.y = this.canvas.height / 2 - y * this._zoom;

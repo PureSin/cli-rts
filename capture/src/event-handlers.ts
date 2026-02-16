@@ -60,19 +60,143 @@ function findUnitByAgentId(state: GameState, sessionId: string, agentId: string)
   return { player, unit };
 }
 
+const MAP_PADDING = 8;
+const LABEL_HEIGHT = 16;
+
 function ensureRegion(state: GameState, region: string): void {
-  if (!state.map.regions[region]) {
-    const idx = Object.keys(state.map.regions).length;
-    const col = idx % 5;
-    const row = Math.floor(idx / 5);
-    state.map.regions[region] = {
-      id: region,
-      label: region || "root",
-      bounds: { x: col * 200, y: row * 200, width: 180, height: 180 },
-      terrain: inferTerrain(region),
+  if (state.map.regions[region]) return;
+
+  // Ensure "base" root always exists
+  if (!state.map.regions["base"]) {
+    state.map.regions["base"] = {
+      id: "base",
+      label: "root",
+      bounds: { x: 0, y: 0, width: state.map.width, height: state.map.height },
+      terrain: "base",
       fileCount: 0,
+      files: [],
       children: [],
     };
+  }
+
+  // "external" is a special top-level region (no parent hierarchy)
+  if (region === "external") {
+    addChildRegion(state, "base", {
+      id: "external",
+      label: "external",
+      terrain: "external",
+    });
+    return;
+  }
+
+  if (region === "base") return;
+
+  // Build ancestor chain: "src/auth/utils" → ["src", "src/auth", "src/auth/utils"]
+  const parts = region.split("/");
+  for (let i = 1; i <= parts.length; i++) {
+    const ancestor = parts.slice(0, i).join("/");
+    if (state.map.regions[ancestor]) continue;
+
+    const parentId = i === 1 ? "base" : parts.slice(0, i - 1).join("/");
+    ensureRegion(state, parentId); // ensure parent exists first
+
+    addChildRegion(state, parentId, {
+      id: ancestor,
+      label: parts[i - 1],
+      terrain: inferTerrain(ancestor),
+    });
+  }
+}
+
+function addChildRegion(
+  state: GameState,
+  parentId: string,
+  opts: { id: string; label: string; terrain: TerrainType }
+): void {
+  const parent = state.map.regions[parentId];
+  if (!parent) return;
+
+  // Subdivide parent's content area among children
+  const pad = MAP_PADDING;
+  const contentX = parent.bounds.x + pad;
+  const contentY = parent.bounds.y + pad + LABEL_HEIGHT;
+  const contentW = parent.bounds.width - pad * 2;
+  const contentH = parent.bounds.height - pad - LABEL_HEIGHT - pad;
+
+  const siblingCount = parent.children.length + 1;
+  // Use a simple grid subdivision: try roughly square cells
+  const cols = Math.ceil(Math.sqrt(siblingCount));
+  const rows = Math.ceil(siblingCount / cols);
+  const cellW = contentW / cols;
+  const cellH = contentH / rows;
+
+  // Re-layout all existing siblings plus the new one
+  parent.children.push(opts.id);
+
+  for (let idx = 0; idx < parent.children.length; idx++) {
+    const childId = parent.children[idx];
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const bounds = {
+      x: Math.round(contentX + col * cellW),
+      y: Math.round(contentY + row * cellH),
+      width: Math.round(cellW),
+      height: Math.round(cellH),
+    };
+
+    if (childId === opts.id) {
+      // Create the new region
+      state.map.regions[opts.id] = {
+        id: opts.id,
+        label: opts.label,
+        parentId,
+        bounds,
+        terrain: opts.terrain,
+        fileCount: 0,
+        files: [],
+        children: [],
+      };
+    } else {
+      // Re-layout existing sibling
+      const existing = state.map.regions[childId];
+      if (existing) {
+        existing.bounds = bounds;
+        // Recursively re-layout children of this sibling
+        relayoutChildren(state, childId);
+      }
+    }
+  }
+}
+
+function relayoutChildren(state: GameState, regionId: string): void {
+  const region = state.map.regions[regionId];
+  if (!region || region.children.length === 0) return;
+
+  const pad = MAP_PADDING;
+  const contentX = region.bounds.x + pad;
+  const contentY = region.bounds.y + pad + LABEL_HEIGHT;
+  const contentW = region.bounds.width - pad * 2;
+  const contentH = region.bounds.height - pad - LABEL_HEIGHT - pad;
+
+  const count = region.children.length;
+  const cols = Math.ceil(Math.sqrt(count));
+  const rows = Math.ceil(count / cols);
+  const cellW = contentW / cols;
+  const cellH = contentH / rows;
+
+  for (let idx = 0; idx < count; idx++) {
+    const childId = region.children[idx];
+    const child = state.map.regions[childId];
+    if (!child) continue;
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    child.bounds = {
+      x: Math.round(contentX + col * cellW),
+      y: Math.round(contentY + row * cellH),
+      width: Math.round(cellW),
+      height: Math.round(cellH),
+    };
+    relayoutChildren(state, childId);
   }
 }
 
@@ -188,16 +312,54 @@ export function handlePreToolUse(state: GameState, payload: Record<string, unkno
     : findUnitForSession(state, sessionId);
   const unitId = agentId ?? sessionId;
 
+  const FILE_TOOLS = new Set(["Read", "Edit", "Write", "Glob", "Grep"]);
+  const WEB_TOOLS = new Set(["WebFetch", "WebSearch"]);
+
   if (result) {
     const { player, unit } = result;
     const target = extractTarget(toolName, toolInput);
     const actionType = toolToActionType(toolName);
-    const region = target && !target.startsWith("http")
-      ? pathToRegion(target, state.repo.path)
-      : toolName === "WebFetch" || toolName === "WebSearch" ? "external" : unit.position.region;
+
+    // Only file-based tools create directory regions
+    // Bash, Task, and other non-file tools keep the unit at its current position
+    let region: string;
+    if (FILE_TOOLS.has(toolName) && target && !target.startsWith("http")) {
+      region = pathToRegion(target, state.repo.path);
+    } else if (WEB_TOOLS.has(toolName)) {
+      region = "external";
+    } else {
+      region = unit.position.region;
+    }
 
     ensureRegion(state, region);
     const regionData = state.map.regions[region];
+
+    // Track file in region
+    let filename: string | undefined;
+    if (FILE_TOOLS.has(toolName) && target && !target.startsWith("http")) {
+      filename = target.split("/").pop();
+      if (filename && regionData && !regionData.files.includes(filename)) {
+        if (regionData.files.length < 20) {
+          regionData.files.push(filename);
+        }
+        regionData.fileCount = regionData.files.length;
+      }
+    }
+
+    // Position unit at its file within the region
+    let targetX = regionData ? regionData.bounds.x + regionData.bounds.width / 2 : unit.position.x;
+    let targetY = regionData ? regionData.bounds.y + regionData.bounds.height / 2 : unit.position.y;
+    if (filename && regionData && regionData.files.length > 0) {
+      const fileIndex = regionData.files.indexOf(filename);
+      if (fileIndex >= 0) {
+        const padTop = 24; // space for region label
+        const padBottom = 8;
+        const usableHeight = regionData.bounds.height - padTop - padBottom;
+        const slotHeight = usableHeight / Math.max(regionData.files.length, 1);
+        targetX = regionData.bounds.x + regionData.bounds.width / 2;
+        targetY = regionData.bounds.y + padTop + slotHeight * fileIndex + slotHeight / 2;
+      }
+    }
 
     unit.status = "acting";
     unit.currentAction = {
@@ -210,8 +372,8 @@ export function handlePreToolUse(state: GameState, payload: Record<string, unkno
     };
     unit.targetPosition = {
       region,
-      x: regionData ? regionData.bounds.x + regionData.bounds.width / 2 : unit.position.x,
-      y: regionData ? regionData.bounds.y + regionData.bounds.height / 2 : unit.position.y,
+      x: targetX,
+      y: targetY,
     };
     unit.lastActionAt = Date.now();
     player.lastActivityAt = Date.now();
