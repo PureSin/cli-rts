@@ -19,3 +19,6 @@ build/
 
 # Logs
 *.log
+
+# cli-rts runtime
+.cli-rts/

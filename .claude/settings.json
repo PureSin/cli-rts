@@ -1,0 +1,160 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit session-start",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit session-end",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit user-prompt",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit stop",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit pre-tool",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit post-tool",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit post-tool-failure",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit subagent-start",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit subagent-stop",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit permission-request",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit notification",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit task-completed",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit pre-compact",
+            "async": true,
+            "__cli_rts": true
+          }
+        ]
+      }
+    ]
+  }
+}
