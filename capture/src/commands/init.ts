@@ -67,11 +67,18 @@ function resolveCliCommand(): string {
   }
 }
 
+function resolveSessionStartScript(): string {
+  // The session-start script lives at capture/bin/session-start.sh relative to this package.
+  // __dirname is capture/dist/ so go up one level then into bin/.
+  return resolve(__dirname, "..", "bin", "session-start.sh");
+}
+
 export async function initCommand(): Promise<void> {
   const cwd = process.cwd();
   const claudeDir = join(cwd, ".claude");
   const settingsPath = join(claudeDir, "settings.json");
   const cliCmd = resolveCliCommand();
+  const sessionStartScript = resolveSessionStartScript();
 
   // Ensure .claude/ exists
   if (!existsSync(claudeDir)) {
@@ -97,9 +104,15 @@ export async function initCommand(): Promise<void> {
 
   for (const eventType of HOOK_EVENT_TYPES) {
     const slug = EVENT_SLUG[eventType];
+    // SessionStart gets the full startup script (spins up servers + opens browser + emits).
+    // All other events use the plain emit command.
+    const command =
+      eventType === "SessionStart"
+        ? `bash ${sessionStartScript}`
+        : `${cliCmd} emit ${slug}`;
     const ourHook: HookEntry = {
       type: "command",
-      command: `${cliCmd} emit ${slug}`,
+      command,
       async: true,
       __cli_rts: true,
     };

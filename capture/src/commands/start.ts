@@ -1,5 +1,5 @@
 import http from "node:http";
-import { writeFile, mkdir } from "node:fs/promises";
+import { writeFile, appendFile, readFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { createEmptyState, type GameState } from "../game-state.js";
@@ -9,6 +9,7 @@ export async function startCommand(port: number): Promise<void> {
   const cwd = process.cwd();
   const stateDir = join(cwd, ".cli-rts");
   const statePath = join(stateDir, "game-state.json");
+  const eventLogPath = join(stateDir, "event-log.jsonl");
 
   // Ensure .cli-rts/ exists
   if (!existsSync(stateDir)) {
@@ -16,11 +17,23 @@ export async function startCommand(port: number): Promise<void> {
   }
 
   const state = createEmptyState(cwd);
+  let seq = 0;
 
   // Serialize file writes so concurrent events don't race
   let writeChain: Promise<void> = Promise.resolve();
   function queueStateWrite(): void {
     writeChain = writeChain.then(() => writeStateFile(statePath, state)).catch(() => {});
+  }
+  function queueEventLogAppend(eventType: string, payload: unknown): void {
+    seq++;
+    const line = JSON.stringify({
+      seq,
+      ts: Date.now(),
+      eventType,
+      payload,
+      state: JSON.parse(JSON.stringify(state)),
+    });
+    writeChain = writeChain.then(() => appendFile(eventLogPath, line + "\n")).catch(() => {});
   }
 
   // Write initial state
@@ -45,11 +58,26 @@ export async function startCommand(port: number): Promise<void> {
         const { eventType, payload } = JSON.parse(body);
         const event = handleEvent(state, eventType, payload ?? {});
         queueStateWrite();
+        queueEventLogAppend(eventType, payload ?? {});
 
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: true, tick: state.tick, event: event.id }));
       } catch (err) {
         res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, error: String(err) }));
+      }
+      return;
+    }
+
+    if (req.method === "GET" && req.url === "/events") {
+      try {
+        const data = existsSync(eventLogPath)
+          ? await readFile(eventLogPath, "utf-8")
+          : "";
+        res.writeHead(200, { "Content-Type": "application/x-ndjson" });
+        res.end(data);
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: false, error: String(err) }));
       }
       return;
@@ -83,9 +111,11 @@ export async function startCommand(port: number): Promise<void> {
   server.listen(port, "127.0.0.1", () => {
     console.log(`cli-rts daemon listening on http://127.0.0.1:${port}`);
     console.log(`  POST /events  — receive hook events`);
+    console.log(`  GET  /events  — event log (JSONL)`);
     console.log(`  GET  /state   — current game state`);
     console.log(`  GET  /health  — health check`);
     console.log(`\nGame state: ${statePath}`);
+    console.log(`Event log:  ${eventLogPath}`);
   });
 
   // Graceful shutdown

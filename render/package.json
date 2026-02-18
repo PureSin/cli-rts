@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:fixture": "vite --",
+    "dev:replay": "vite --",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

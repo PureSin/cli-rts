@@ -6,9 +6,17 @@ import manifest from "./packs/placeholder/manifest.json";
 
 const unitDefs = manifest.units as Record<UnitType, SpriteRef>;
 const statusColors: Record<string, number> = {
-  acting: 0x44ff44,
   waiting: 0xffcc00,
   failed: 0xff2222,
+};
+
+const actionTypeColors: Record<string, number> = {
+  scouting:    0x4488ff,  // Read / Glob / Grep  — blue
+  building:    0xff8844,  // Write / Edit         — orange
+  attacking:   0xff4444,  // Bash                 — red
+  summoning:   0xaa44ff,  // Task                 — purple
+  researching: 0x44ccaa,  // WebFetch / WebSearch  — teal
+  special:     0x44ff44,  // fallback              — green
 };
 
 function drawShape(g: Graphics, shape: SpriteRef["shape"], size: number, color: number) {
@@ -65,8 +73,11 @@ export function createUnitGraphics(unitType: UnitType, playerColor: PlayerColor)
   return g;
 }
 
-export function createStatusIndicator(status: UnitStatus): Graphics | null {
-  const color = statusColors[status];
+export function createStatusIndicator(status: UnitStatus, actionType?: string): Graphics | null {
+  const color =
+    status === "acting"
+      ? (actionTypeColors[actionType ?? ""] ?? actionTypeColors.special)
+      : statusColors[status];
   if (color == null) return null;
 
   const g = new Graphics();

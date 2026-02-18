@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit session-start",
+            "command": "bash /Users/kelvinma/Documents/github/cli-rts/capture/bin/session-start.sh",
             "async": true,
             "__cli_rts": true
           }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit session-end",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit session-end",
             "async": true,
             "__cli_rts": true
           }
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit user-prompt",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit user-prompt",
             "async": true,
             "__cli_rts": true
           }
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit stop",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit stop",
             "async": true,
             "__cli_rts": true
           }
@@ -53,7 +53,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit pre-tool",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit pre-tool",
             "async": true,
             "__cli_rts": true
           }
@@ -65,7 +65,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit post-tool",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit post-tool",
             "async": true,
             "__cli_rts": true
           }
@@ -77,7 +77,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit post-tool-failure",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit post-tool-failure",
             "async": true,
             "__cli_rts": true
           }
@@ -89,7 +89,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit subagent-start",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit subagent-start",
             "async": true,
             "__cli_rts": true
           }
@@ -101,7 +101,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit subagent-stop",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit subagent-stop",
             "async": true,
             "__cli_rts": true
           }
@@ -113,7 +113,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit permission-request",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit permission-request",
             "async": true,
             "__cli_rts": true
           }
@@ -125,7 +125,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit notification",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit notification",
             "async": true,
             "__cli_rts": true
           }
@@ -137,7 +137,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit task-completed",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit task-completed",
             "async": true,
             "__cli_rts": true
           }
@@ -149,7 +149,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/dist/cli.js emit pre-compact",
+            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit pre-compact",
             "async": true,
             "__cli_rts": true
           }
