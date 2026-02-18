@@ -1,5 +1,13 @@
 import { Application } from "pixi.js";
 import type { GameState } from "./types.js";
+
+function formatTs(ts: number): string {
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${hh}:${mm}:${ss}`;
+}
 import { StateSync } from "./state/StateSync.js";
 import { ReplaySync, type EventEntry } from "./state/ReplaySync.js";
 import { ReplayControls } from "./ui/ReplayControls.js";
@@ -133,17 +141,17 @@ async function init() {
       timeline.notifyLiveUpdate(state.eventLog.length);
     });
 
-    timeline.onScrub((historicalState, idx, total) => {
+    timeline.onScrub((historicalState, idx, total, ts) => {
       scrubbing = true;
-      // Force renderers to show the historical state even if tick matches
       mapRenderer.resetTick();
       applyState(historicalState);
       timeline.notifyLiveUpdate(total);
+      eventLog.setTime(formatTs(ts));
     });
 
     timeline.onLive(() => {
       scrubbing = false;
-      // Apply current live state immediately so there's no stale frame
+      eventLog.setTime("");
       const current = stateSync.getState();
       if (current) {
         mapRenderer.resetTick();

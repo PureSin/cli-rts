@@ -2,7 +2,7 @@ import { DAEMON_URL } from "../config.js";
 import type { GameState } from "../types.js";
 import type { EventEntry } from "../state/ReplaySync.js";
 
-export type ScrubHandler = (state: GameState, idx: number, total: number) => void;
+export type ScrubHandler = (state: GameState, idx: number, total: number, ts: number) => void;
 export type LiveHandler = (state: GameState | null) => void;
 
 type Mode = "live" | "paused" | "playing";
@@ -26,7 +26,6 @@ export class TimelineControls {
   private playBtn: HTMLButtonElement;
   private liveBtn: HTMLButtonElement;
   private slider: HTMLInputElement;
-  private timeEl: HTMLSpanElement;
   private countEl: HTMLSpanElement;
 
   private events: EventEntry[] = [];
@@ -92,19 +91,6 @@ export class TimelineControls {
       this.emitScrub(this.cursor);
     });
 
-    // Current event timestamp (rotated, shown while scrubbing/playing)
-    this.timeEl = document.createElement("span");
-    this.timeEl.style.cssText = [
-      "color:#4af",
-      "font-family:monospace",
-      "font-size:9px",
-      "writing-mode:vertical-lr",
-      "letter-spacing:1px",
-      "flex-shrink:0",
-      "user-select:none",
-    ].join(";");
-    this.timeEl.textContent = "";
-
     // Event count label (rotated)
     this.countEl = document.createElement("span");
     this.countEl.style.cssText = [
@@ -119,7 +105,6 @@ export class TimelineControls {
     this.countEl.textContent = "0";
 
     this.el.appendChild(btnRow);
-    this.el.appendChild(this.timeEl);
     this.el.appendChild(this.slider);
     this.el.appendChild(this.countEl);
   }
@@ -246,7 +231,6 @@ export class TimelineControls {
     this.playBtn.style.color = "#4af";
     this.liveBtn.style.color = "#555";
     this.slider.value = this.slider.max;
-    this.timeEl.textContent = "";
     this.onLiveCb?.(null);
     // Refresh event list immediately
     this.fetchEvents();
@@ -255,16 +239,7 @@ export class TimelineControls {
   private emitScrub(idx: number) {
     const entry = this.events[idx];
     if (!entry) return;
-    this.timeEl.textContent = TimelineControls.formatTs(entry.ts);
-    this.onScrubCb?.(entry.state, idx, this.events.length);
-  }
-
-  private static formatTs(ts: number): string {
-    const d = new Date(ts);
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    const ss = String(d.getSeconds()).padStart(2, "0");
-    return `${hh}:${mm}:${ss}`;
+    this.onScrubCb?.(entry.state, idx, this.events.length, entry.ts);
   }
 
   private async fetchEvents() {

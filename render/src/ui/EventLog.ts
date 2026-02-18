@@ -21,6 +21,8 @@ const DEFAULT_WIDTH = 300;
 export class EventLog {
   readonly el: HTMLDivElement;
   private header: HTMLDivElement;
+  private headerTime: HTMLSpanElement;
+  private headerStatus: HTMLSpanElement;
   private list: HTMLDivElement;
   private lastEventId = "";
 
@@ -65,7 +67,21 @@ export class EventLog {
       "justify-content:space-between",
       "align-items:center",
     ].join(";");
-    this.header.textContent = "event log";
+    const headerLabel = document.createElement("span");
+    headerLabel.style.cssText = "letter-spacing:1px;color:#445";
+    headerLabel.textContent = "EVENT LOG";
+
+    this.headerTime = document.createElement("span");
+    this.headerTime.style.cssText = "color:#4af;font-size:10px;";
+    this.headerTime.textContent = "";
+
+    this.headerStatus = document.createElement("span");
+    this.headerStatus.style.cssText = "font-size:10px;";
+    this.headerStatus.textContent = "";
+
+    this.header.appendChild(headerLabel);
+    this.header.appendChild(this.headerTime);
+    this.header.appendChild(this.headerStatus);
 
     this.list = document.createElement("div");
     this.list.style.cssText = [
@@ -80,11 +96,15 @@ export class EventLog {
     this.el.appendChild(this.list);
   }
 
-  /** Called from the game loop to update the status chip in the header. */
+  /** Called from the game loop to update the connection status chip. */
   setStatus(text: string, color: string) {
-    this.header.innerHTML =
-      `<span style="letter-spacing:1px;color:#445">EVENT LOG</span>` +
-      `<span style="color:${color};font-size:10px">${text}</span>`;
+    this.headerStatus.textContent = text;
+    this.headerStatus.style.color = color;
+  }
+
+  /** Show or clear the current event timestamp (e.g. while scrubbing). */
+  setTime(text: string) {
+    this.headerTime.textContent = text;
   }
 
   update(state: GameState) {
