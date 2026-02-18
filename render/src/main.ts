@@ -1,8 +1,10 @@
 import { Application } from "pixi.js";
+import type { GameState } from "./types.js";
 import { StateSync } from "./state/StateSync.js";
 import { ReplaySync, type EventEntry } from "./state/ReplaySync.js";
 import { ReplayControls } from "./ui/ReplayControls.js";
 import { EventLog } from "./ui/EventLog.js";
+import { TimelineControls } from "./ui/TimelineControls.js";
 import { GameLoop } from "./core/GameLoop.js";
 import { Camera } from "./core/Camera.js";
 import { MapRenderer } from "./renderer/MapRenderer.js";
@@ -69,9 +71,24 @@ async function init() {
   overlayContainer.appendChild(unitLabelOverlay.el);
   unitPool.setLabelOverlay(unitLabelOverlay);
 
-  // Event log panel (right side)
+  // Right panel: [timeline strip | event log] — positioned as a unit so they
+  // stay connected when EventLog is resized.
+  const rightPanel = document.createElement("div");
+  rightPanel.style.cssText = [
+    "position:fixed",
+    "top:8px",
+    "right:8px",
+    "max-height:calc(100vh - 16px)",
+    "display:flex",
+    "flex-direction:row",
+    "z-index:10",
+  ].join(";");
+
+  const timeline = new TimelineControls();
   const eventLog = new EventLog();
-  document.getElementById("ui-overlay")!.appendChild(eventLog.el);
+  rightPanel.appendChild(timeline.el);
+  rightPanel.appendChild(eventLog.el);
+  document.getElementById("ui-overlay")!.appendChild(rightPanel);
 
   // Center camera on map
   camera.centerOn(500, 500);
@@ -100,13 +117,42 @@ async function init() {
     const stateSync = new StateSync();
     stateSource = stateSync;
 
-    stateSync.onChange((state) => {
+    let scrubbing = false;
+
+    // Push renderers to a given state (used by both live and scrub paths)
+    const applyState = (state: GameState) => {
       mapRenderer.update(state);
       mapOverlay.update(state);
       unitPool.syncUnits(state);
       eventLog.update(state);
+    };
+
+    stateSync.onChange((state) => {
+      if (scrubbing) return;
+      applyState(state);
+      timeline.notifyLiveUpdate(state.eventLog.length);
     });
+
+    timeline.onScrub((historicalState, idx, total) => {
+      scrubbing = true;
+      // Force renderers to show the historical state even if tick matches
+      mapRenderer.resetTick();
+      applyState(historicalState);
+      timeline.notifyLiveUpdate(total);
+    });
+
+    timeline.onLive(() => {
+      scrubbing = false;
+      // Apply current live state immediately so there's no stale frame
+      const current = stateSync.getState();
+      if (current) {
+        mapRenderer.resetTick();
+        applyState(current);
+      }
+    });
+
     stateSync.start();
+    timeline.start();
   }
 
   // Game loop — interpolate units each frame, sync overlays with camera

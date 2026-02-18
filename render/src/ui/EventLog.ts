@@ -27,17 +27,12 @@ export class EventLog {
   constructor() {
     this.el = document.createElement("div");
     this.el.style.cssText = [
-      "position:fixed",
-      "top:8px",
-      "right:8px",
       `width:${DEFAULT_WIDTH}px`,
-      "max-height:calc(100vh - 16px)",
       "display:flex",
       "flex-direction:column",
-      "z-index:10",
       "font-family:monospace",
       "font-size:11px",
-      "border-radius:4px",
+      "border-radius:0 4px 4px 0",
       "overflow:hidden",
       "border:1px solid #222",
     ].join(";");

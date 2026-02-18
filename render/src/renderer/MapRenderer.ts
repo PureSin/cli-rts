@@ -6,6 +6,11 @@ export class MapRenderer {
   readonly container = new Container();
   private lastTick = -1;
 
+  /** Force the next update() call to rebuild regardless of tick. */
+  resetTick() {
+    this.lastTick = -1;
+  }
+
   update(state: GameState) {
     if (state.tick === this.lastTick) return;
     this.lastTick = state.tick;
