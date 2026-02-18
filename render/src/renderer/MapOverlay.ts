@@ -84,8 +84,8 @@ export class MapOverlay {
       const isActive = activeFiles?.has(fname) ?? false;
       const fileEl = document.createElement("div");
       fileEl.textContent = fname;
-      fileEl.style.color = isActive ? "#ddd" : "#666";
-      fileEl.style.opacity = isActive ? "0.95" : "0.6";
+      fileEl.style.color = isActive ? "#fff" : "#aaa";
+      fileEl.style.opacity = isActive ? "1" : "0.85";
       listEl.appendChild(fileEl);
     }
 
