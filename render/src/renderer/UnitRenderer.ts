@@ -7,6 +7,7 @@ export class UnitRenderer {
   private shape: Graphics;
   private statusIndicator: Graphics | null = null;
   private lastStatus: UnitStatus | null = null;
+  private lastActionType: string | undefined;
 
   constructor(unit: Unit, playerColor: PlayerColor) {
     this.shape = createUnitGraphics(unit.type, playerColor);
@@ -14,9 +15,10 @@ export class UnitRenderer {
     // Name and action labels are rendered by UnitLabelOverlay (HTML) for crisp text
   }
 
-  updateStatus(status: UnitStatus) {
-    if (status === this.lastStatus) return;
+  updateStatus(status: UnitStatus, actionType?: string) {
+    if (status === this.lastStatus && actionType === this.lastActionType) return;
     this.lastStatus = status;
+    this.lastActionType = actionType;
 
     // Remove old indicator
     if (this.statusIndicator) {
@@ -25,7 +27,7 @@ export class UnitRenderer {
     }
 
     // Add new indicator for acting/waiting/failed
-    const indicator = createStatusIndicator(status);
+    const indicator = createStatusIndicator(status, actionType);
     if (indicator) {
       this.statusIndicator = indicator;
       this.container.addChild(indicator);

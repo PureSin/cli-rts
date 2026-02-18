@@ -74,8 +74,8 @@ export class UnitPool {
     entry.targetX = target.x;
     entry.targetY = target.y;
 
-    // Update status
-    entry.renderer.updateStatus(unit.status);
+    // Update status — pass action type so the indicator colour reflects the tool
+    entry.renderer.updateStatus(unit.status, unit.currentAction?.actionType ?? undefined);
     entry.displayName = unit.displayName;
     entry.currentAction = unit.currentAction;
   }
