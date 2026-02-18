@@ -365,44 +365,45 @@ export function handlePreToolUse(state: GameState, payload: Record<string, unkno
   const FILE_TOOLS = new Set(["Read", "Edit", "Write", "Glob", "Grep"]);
   const WEB_TOOLS = new Set(["WebFetch", "WebSearch"]);
 
+  const target = extractTarget(toolName, toolInput);
+  const actionType = toolToActionType(toolName);
+
+  // Always derive the region and track the file — even when there is no active
+  // player/unit (e.g. tool calls arriving before session-start, or after a
+  // daemon restart mid-session). This keeps the map up to date regardless.
+  let region: string;
+  if (FILE_TOOLS.has(toolName) && target && !target.startsWith("http")) {
+    region = pathToRegion(target, state.repo.path);
+  } else if (WEB_TOOLS.has(toolName)) {
+    region = "external";
+  } else {
+    region = result ? result.unit.position.region : "base";
+  }
+
+  ensureRegion(state, region);
+  const regionData = state.map.regions[region];
+
+  let filename: string | undefined;
+  if (FILE_TOOLS.has(toolName) && target && !target.startsWith("http")) {
+    filename = target.split("/").pop();
+    if (filename && regionData && !regionData.files.includes(filename)) {
+      if (regionData.files.length < 20) {
+        regionData.files.push(filename);
+      }
+      regionData.fileCount = regionData.files.length;
+    }
+  }
+
+  // Unit movement and stat tracking only when a player/unit exists
   if (result) {
     const { player, unit } = result;
-    const target = extractTarget(toolName, toolInput);
-    const actionType = toolToActionType(toolName);
 
-    // Only file-based tools create directory regions
-    // Bash, Task, and other non-file tools keep the unit at its current position
-    let region: string;
-    if (FILE_TOOLS.has(toolName) && target && !target.startsWith("http")) {
-      region = pathToRegion(target, state.repo.path);
-    } else if (WEB_TOOLS.has(toolName)) {
-      region = "external";
-    } else {
-      region = unit.position.region;
-    }
-
-    ensureRegion(state, region);
-    const regionData = state.map.regions[region];
-
-    // Track file in region
-    let filename: string | undefined;
-    if (FILE_TOOLS.has(toolName) && target && !target.startsWith("http")) {
-      filename = target.split("/").pop();
-      if (filename && regionData && !regionData.files.includes(filename)) {
-        if (regionData.files.length < 20) {
-          regionData.files.push(filename);
-        }
-        regionData.fileCount = regionData.files.length;
-      }
-    }
-
-    // Position unit at its file within the region
     let targetX = regionData ? regionData.bounds.x + regionData.bounds.width / 2 : unit.position.x;
     let targetY = regionData ? regionData.bounds.y + regionData.bounds.height / 2 : unit.position.y;
     if (filename && regionData && regionData.files.length > 0) {
       const fileIndex = regionData.files.indexOf(filename);
       if (fileIndex >= 0) {
-        const padTop = 24; // space for region label
+        const padTop = 24;
         const padBottom = 8;
         const usableHeight = regionData.bounds.height - padTop - padBottom;
         const slotHeight = usableHeight / Math.max(regionData.files.length, 1);
@@ -420,11 +421,7 @@ export function handlePreToolUse(state: GameState, payload: Record<string, unkno
       startedAt: Date.now(),
       description: `${toolName}: ${target.length > 60 ? target.slice(0, 60) + "…" : target}`,
     };
-    unit.targetPosition = {
-      region,
-      x: targetX,
-      y: targetY,
-    };
+    unit.targetPosition = { region, x: targetX, y: targetY };
     unit.lastActionAt = Date.now();
     player.lastActivityAt = Date.now();
     player.stats.toolCallsTotal++;
@@ -434,7 +431,7 @@ export function handlePreToolUse(state: GameState, payload: Record<string, unkno
     if (toolName === "Bash") player.stats.bashCommandsRun++;
   }
 
-  return addEvent(state, "unit_action_start", sessionId, unitId, `${toolName} → ${extractTarget(toolName, (payload.tool_input as Record<string, unknown>) ?? {})}`, {
+  return addEvent(state, "unit_action_start", sessionId, unitId, `${toolName} → ${target}`, {
     toolName,
     toolUseId,
   });
