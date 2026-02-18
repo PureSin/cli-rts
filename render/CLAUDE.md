@@ -2,12 +2,20 @@
 
 ## Context
 
-The capture daemon (Sprint 1) is complete — it hooks into Claude Code, receives events via `cli-rts emit`, maintains `GameState` in memory, and serves it at `GET http://localhost:4175/state`. The `render/` folder is empty. We need a browser app that polls the daemon and renders the game state as a top-down 2D RTS visualization.
+The capture daemon hooks into Claude Code, receives events via `cli-rts emit`, maintains `GameState` in memory, serves it at `GET /state`, and logs every event to `.cli-rts/event-log.jsonl`. The render package is a browser app that visualizes game state as a top-down 2D RTS.
 
-**Decisions made:**
-- Top-down 2D (not isometric)
-- PixiJS v8 (not Phaser 3) — lightweight WebGL renderer, ~150KB, more flexible
-- Placeholder shapes first — colored geometric shapes for units, colored rectangles for terrain
+**Stack:** PixiJS v8, Vite 6, TypeScript
+**Visual style:** Top-down 2D, placeholder geometric shapes (colored circles/diamonds for units, rectangles for terrain)
+
+## Modes
+
+| Mode | Command | Description |
+|------|---------|-------------|
+| Live | `npm run dev` | Polls daemon at `http://127.0.0.1:4175/state` every 500ms |
+| Fixture | `npm run dev:fixture -- path/to/game-state.json` | Loads a single state snapshot |
+| Replay | `npm run dev:replay -- path/to/event-log.jsonl` | Scrubs through event log with timeline UI |
+
+The Vite config detects the file extension (`.json` vs `.jsonl`) of the positional arg to select fixture vs replay mode. Each mode injects a global flag (`window.__FIXTURE_MODE__` or `window.__REPLAY_MODE__`) and serves the file at a dev middleware endpoint.
 
 ## Project Structure
 
@@ -15,15 +23,16 @@ The capture daemon (Sprint 1) is complete — it hooks into Claude Code, receive
 render/
 ├── package.json                        # pixi.js + vite
 ├── tsconfig.json
-├── vite.config.ts
+├── vite.config.ts                      # fixture + replay Vite plugins
 ├── index.html
 ├── src/
-│   ├── main.ts                         # Bootstrap: PixiJS app, state sync, game loop
+│   ├── main.ts                         # Bootstrap: detects mode, wires state source + renderers
 │   ├── types.ts                        # GameState types (copied from capture)
 │   ├── config.ts                       # Daemon URL, poll interval, map dimensions
 │   │
 │   ├── state/
-│   │   └── StateSync.ts                # Polls GET /state, emits changes on tick diff
+│   │   ├── StateSync.ts                # Live/fixture: polls GET /state, emits on tick change
+│   │   └── ReplaySync.ts              # Replay: holds event array, seek/play/pause/speed
 │   │
 │   ├── assets/
 │   │   ├── AssetManifest.ts            # Interface: what an asset pack must provide
@@ -37,15 +46,14 @@ render/
 │   │   └── Camera.ts                   # Pan (drag) + zoom (scroll wheel)
 │   │
 │   ├── renderer/
-│   │   ├── MapRenderer.ts              # Terrain regions as colored rectangles with labels
+│   │   ├── MapRenderer.ts              # Terrain regions as colored rectangles
+│   │   ├── MapOverlay.ts               # HTML labels for map regions (crisp at any zoom)
 │   │   ├── UnitRenderer.ts             # Unit display: shape + color ring + status indicator
 │   │   ├── UnitPool.ts                 # Create/update/remove unit display objects by ID
-│   │   └── MinimapRenderer.ts          # Corner overview with viewport indicator
+│   │   └── UnitLabelOverlay.ts         # HTML labels for units (crisp at any zoom)
 │   │
 │   ├── ui/
-│   │   ├── EventFeed.ts                # HTML overlay: scrolling event log (bottom-right)
-│   │   ├── PlayerPanel.ts              # HTML overlay: player stats (top-left)
-│   │   └── StatusBar.ts                # Connection status + tick counter (top bar)
+│   │   └── ReplayControls.ts           # Replay mode: slider, play/pause, speed, event label
 │   │
 │   └── utils/
 │       ├── RegionSanitizer.ts          # Cleans messy region IDs → displayable labels
@@ -54,57 +62,27 @@ render/
 
 ## Key Architecture Decisions
 
-1. **HTML overlays for UI, PixiJS for the game world.** HTML is better for text, scrolling, layout. PixiJS handles sprite/shape rendering. Canvas fills viewport, HTML divs positioned on top.
+1. **HTML overlays for UI, PixiJS for the game world.** HTML is better for text, scrolling, layout. PixiJS handles sprite/shape rendering. Canvas fills viewport, HTML divs positioned on top with `pointer-events:none`.
 
-2. **Types copied, not shared.** `render/` and `capture/` are independent packages. ~140 lines of types copied to avoid monorepo complexity. HTTP/JSON is the contract boundary.
+2. **Types copied, not shared.** `render/` and `capture/` are independent packages. ~145 lines of types copied to avoid monorepo complexity. HTTP/JSON is the contract boundary.
 
 3. **State diffing in the renderer.** Renderer compares new state to previous state to detect changes (new units, moved units, removed units). Daemon stays simple.
 
-4. **Placeholder pack ships first.** Entire rendering pipeline works with programmatic PixiJS `Graphics`. Real sprite assets are a visual upgrade, not an architectural change.
+4. **Replay uses full state snapshots.** Each JSONL line includes the complete `GameState` at that point. The render layer can seek to any event with O(1) cost — no need to replay game logic. Typical log size is 1-10MB.
 
-5. **Region sanitization at render layer.** Example data has messy region IDs (JSON blobs, shell commands). Renderer sanitizes labels for display; IDs remain as keys.
+5. **Region sanitization at render layer.** Region IDs from the daemon can be messy paths. Renderer sanitizes labels for display; raw IDs remain as keys.
 
-## Phase 1: Get Anything Rendering
+## Replay Mode Details
 
-### Files to create (in order):
+**Event log format** (one JSON object per line):
+```
+{"seq":1,"ts":1700000000000,"eventType":"session-start","payload":{...},"state":{...}}
+```
 
-**1. Project scaffold**
-- `render/package.json` — deps: `pixi.js@^8`, devDeps: `vite@^6`, `typescript@^5.7`
-- `render/tsconfig.json` — ES2022, Bundler moduleResolution, strict, DOM lib
-- `render/vite.config.ts` — dev server port 5175, outDir dist
-- `render/index.html` — `<div id="game">` + `<div id="ui-overlay">`, full viewport, black bg
+**ReplaySync** exposes:
+- `seek(index)` — jump to any event, emit state to listeners
+- `play()` / `pause()` — auto-advance using original timestamp deltas
+- `setSpeed(multiplier)` — 0.5x, 1x, 2x, 4x
+- `getState()` / `onChange()` — same interface as StateSync
 
-**2. Types and config**
-- `render/src/types.ts` — Copy interfaces from `capture/src/game-state.ts` (lines 5-147)
-- `render/src/config.ts` — `DAEMON_URL`, `POLL_INTERVAL_MS`, `MAP_WIDTH/HEIGHT`
-
-**3. State sync**
-- `render/src/state/StateSync.ts` — Polls `GET /state` every 500ms, compares tick numbers, notifies listeners on change
-
-**4. Utilities**
-- `render/src/utils/RegionSanitizer.ts` — Clean messy region IDs
-- `render/src/utils/ColorUtils.ts` — PlayerColor→hex, TerrainType→fill color
-
-**5. Asset abstraction (placeholder only)**
-- `render/src/assets/AssetManifest.ts` — Interface
-- `render/src/assets/packs/placeholder/manifest.json` — Shape definitions
-- `render/src/assets/AssetLoader.ts` — Generates PixiJS Graphics from manifest
-
-**6. Core systems**
-- `render/src/core/GameLoop.ts` — rAF loop with delta time
-- `render/src/core/Camera.ts` — Pan + zoom
-
-**7. Renderers**
-- `render/src/renderer/MapRenderer.ts` — Terrain regions as colored rectangles
-- `render/src/renderer/UnitPool.ts` — Manage unit display objects
-- `render/src/renderer/UnitRenderer.ts` — Unit visuals
-
-**8. Bootstrap**
-- `render/src/main.ts` — Wire it all together
-
-## Verification
-
-1. `cd render && npm install && npm run dev` — dev server starts on 5175
-2. `cd capture && npm run dev -- start` — daemon on 4175
-3. Open `http://localhost:5175` — see map regions and units from live state
-4. `curl -X POST http://localhost:4175/events -d '{"eventType":"SessionStart","payload":{"session_id":"test1","cwd":"/tmp","model":"test"}}' -H 'Content-Type: application/json'` — verify unit appears
+**ReplayControls** renders a fixed-bottom bar with range slider, play/pause, speed toggle, and current event type label.

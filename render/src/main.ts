@@ -1,11 +1,30 @@
 import { Application } from "pixi.js";
 import { StateSync } from "./state/StateSync.js";
+import { ReplaySync, type EventEntry } from "./state/ReplaySync.js";
+import { ReplayControls } from "./ui/ReplayControls.js";
 import { GameLoop } from "./core/GameLoop.js";
 import { Camera } from "./core/Camera.js";
 import { MapRenderer } from "./renderer/MapRenderer.js";
 import { MapOverlay } from "./renderer/MapOverlay.js";
 import { UnitPool } from "./renderer/UnitPool.js";
 import { UnitLabelOverlay } from "./renderer/UnitLabelOverlay.js";
+
+declare global {
+  interface Window {
+    __REPLAY_MODE__?: boolean;
+  }
+}
+
+async function loadReplayEntries(): Promise<EventEntry[]> {
+  const res = await fetch("/__replay/events.jsonl");
+  if (!res.ok) throw new Error(`Failed to load replay: HTTP ${res.status}`);
+  const text = await res.text();
+  return text
+    .trim()
+    .split("\n")
+    .filter((line) => line.length > 0)
+    .map((line) => JSON.parse(line) as EventEntry);
+}
 
 async function init() {
   // Create PixiJS application
@@ -52,14 +71,36 @@ async function init() {
   // Center camera on map
   camera.centerOn(500, 500);
 
-  // State sync
-  const stateSync = new StateSync();
-  stateSync.onChange((state) => {
-    mapRenderer.update(state);
-    mapOverlay.update(state);
-    unitPool.syncUnits(state);
-  });
-  stateSync.start();
+  // Determine mode and create appropriate state source
+  const isReplay = !!window.__REPLAY_MODE__;
+  let stateSource: StateSync | ReplaySync;
+
+  if (isReplay) {
+    const entries = await loadReplayEntries();
+    const replaySync = new ReplaySync(entries);
+    stateSource = replaySync;
+
+    // Replay controls UI
+    const controls = new ReplayControls(replaySync);
+    document.getElementById("ui-overlay")!.appendChild(controls.el);
+
+    replaySync.onChange((state) => {
+      mapRenderer.update(state);
+      mapOverlay.update(state);
+      unitPool.syncUnits(state);
+    });
+    replaySync.start();
+  } else {
+    const stateSync = new StateSync();
+    stateSource = stateSync;
+
+    stateSync.onChange((state) => {
+      mapRenderer.update(state);
+      mapOverlay.update(state);
+      unitPool.syncUnits(state);
+    });
+    stateSync.start();
+  }
 
   // Connection status indicator
   const statusEl = document.createElement("div");
@@ -76,15 +117,24 @@ async function init() {
     unitLabelOverlay.syncCamera(camera.worldX, camera.worldY, camera.zoom);
 
     // Update connection indicator
-    const state = stateSync.getState();
-    if (stateSync.connected && state) {
+    const state = stateSource.getState();
+    if (stateSource.connected && state) {
       const playerCount = Object.keys(state.players).length;
-      const prefix = stateSync.isFixture() ? "fixture | " : "";
-      statusEl.textContent = `${prefix}tick ${state.tick} | ${playerCount} players`;
-      statusEl.style.background = stateSync.isFixture()
-        ? "rgba(80,80,34,0.8)"
-        : "rgba(34,80,34,0.8)";
-      statusEl.style.color = stateSync.isFixture() ? "#cc4" : "#4f4";
+      if (stateSource instanceof ReplaySync) {
+        const cursor = stateSource.getCursor();
+        const total = stateSource.getLength();
+        statusEl.textContent = `replay ${cursor + 1}/${total} | tick ${state.tick} | ${playerCount} players`;
+        statusEl.style.background = "rgba(34,50,80,0.8)";
+        statusEl.style.color = "#4af";
+      } else if (stateSource.isFixture()) {
+        statusEl.textContent = `fixture | tick ${state.tick} | ${playerCount} players`;
+        statusEl.style.background = "rgba(80,80,34,0.8)";
+        statusEl.style.color = "#cc4";
+      } else {
+        statusEl.textContent = `tick ${state.tick} | ${playerCount} players`;
+        statusEl.style.background = "rgba(34,80,34,0.8)";
+        statusEl.style.color = "#4f4";
+      }
     } else {
       statusEl.textContent = "disconnected";
       statusEl.style.background = "rgba(80,34,34,0.8)";

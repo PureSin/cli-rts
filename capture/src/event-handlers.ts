@@ -221,7 +221,10 @@ export function handleSessionStart(state: GameState, payload: Record<string, unk
   const permissionMode = (payload.permission_mode as string) ?? "default";
   const cwd = (payload.cwd as string) ?? state.repo.path;
 
-  if (state.repo.path === "" || state.repo.path === "unknown") {
+  // Always prefer the cwd from the session-start payload — it's the authoritative
+  // working directory where Claude Code is actually running, regardless of where
+  // the daemon binary was launched from.
+  if (cwd) {
     state.repo.path = cwd;
     state.repo.name = cwd.split("/").filter(Boolean).pop() ?? "unknown";
   }
