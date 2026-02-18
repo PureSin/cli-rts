@@ -238,7 +238,9 @@ export function pathToRegion(filePath: string, repoPath: string): string {
     : resolvedFile.replace(/^\//, "");
 
   const parts = relative.split("/");
-  // Use first two directory levels as region, e.g. "src/auth"
+  // Use the file's full parent directory as its region so that file accesses
+  // progressively reveal deeper map structure (e.g. "capture/src/commands").
+  // Files in the repo root fall back to "base".
   if (parts.length <= 1) return "base";
-  return parts.slice(0, Math.min(2, parts.length - 1)).join("/");
+  return parts.slice(0, parts.length - 1).join("/");
 }

@@ -1,3 +1,5 @@
+import { readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import {
   GameState,
   GameEvent,
@@ -12,6 +14,46 @@ import {
   extractTarget,
   pathToRegion,
 } from "./game-state.js";
+
+// Directories that are large, generated, or not meaningful to show on the map.
+const SCAN_IGNORE = new Set([
+  ".git", "node_modules", "dist", "build", ".next", ".nuxt",
+  "__pycache__", ".cache", "coverage", ".nyc_output", "vendor",
+]);
+
+/**
+ * Scan the repo root up to 2 directory levels deep and pre-populate map regions
+ * so the map has structure from the moment a session starts.
+ */
+function preScanDirectories(state: GameState): void {
+  const root = state.repo.path;
+  let level1: string[];
+  try {
+    level1 = readdirSync(root);
+  } catch {
+    return;
+  }
+
+  for (const entry of level1) {
+    if (SCAN_IGNORE.has(entry)) continue;
+    let isDir = false;
+    try { isDir = statSync(join(root, entry)).isDirectory(); } catch { continue; }
+    if (!isDir) continue;
+
+    ensureRegion(state, entry);
+
+    let level2: string[];
+    try { level2 = readdirSync(join(root, entry)); } catch { continue; }
+
+    for (const sub of level2) {
+      if (SCAN_IGNORE.has(sub)) continue;
+      try {
+        if (!statSync(join(root, entry, sub)).isDirectory()) continue;
+      } catch { continue; }
+      ensureRegion(state, `${entry}/${sub}`);
+    }
+  }
+}
 
 let eventCounter = 0;
 
@@ -251,6 +293,11 @@ export function handleSessionStart(state: GameState, payload: Record<string, unk
   };
 
   state.players[sessionId] = player;
+
+  // Pre-populate the map with the repo's directory structure so it isn't blank
+  // at session start. Only runs once — ensureRegion is idempotent.
+  preScanDirectories(state);
+
   return addEvent(state, "player_joined", sessionId, sessionId, `Player joined (${model})`);
 }
 
