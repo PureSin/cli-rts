@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/kelvinma/Documents/github/cli-rts/capture/dist/cli.js emit session-start",
+            "command": "bash /Users/kelvinma/Documents/github/cli-rts/capture/bin/session-start.sh",
             "async": true,
             "__cli_rts": true
           }

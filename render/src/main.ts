@@ -2,6 +2,7 @@ import { Application } from "pixi.js";
 import { StateSync } from "./state/StateSync.js";
 import { ReplaySync, type EventEntry } from "./state/ReplaySync.js";
 import { ReplayControls } from "./ui/ReplayControls.js";
+import { EventLog } from "./ui/EventLog.js";
 import { GameLoop } from "./core/GameLoop.js";
 import { Camera } from "./core/Camera.js";
 import { MapRenderer } from "./renderer/MapRenderer.js";
@@ -68,6 +69,10 @@ async function init() {
   overlayContainer.appendChild(unitLabelOverlay.el);
   unitPool.setLabelOverlay(unitLabelOverlay);
 
+  // Event log panel (right side)
+  const eventLog = new EventLog();
+  document.getElementById("ui-overlay")!.appendChild(eventLog.el);
+
   // Center camera on map
   camera.centerOn(500, 500);
 
@@ -88,6 +93,7 @@ async function init() {
       mapRenderer.update(state);
       mapOverlay.update(state);
       unitPool.syncUnits(state);
+      eventLog.update(state);
     });
     replaySync.start();
   } else {
@@ -98,15 +104,10 @@ async function init() {
       mapRenderer.update(state);
       mapOverlay.update(state);
       unitPool.syncUnits(state);
+      eventLog.update(state);
     });
     stateSync.start();
   }
-
-  // Connection status indicator
-  const statusEl = document.createElement("div");
-  statusEl.style.cssText =
-    "position:fixed;top:8px;right:8px;padding:4px 10px;border-radius:4px;font-size:11px;font-family:monospace;z-index:10;";
-  document.getElementById("ui-overlay")!.appendChild(statusEl);
 
   // Game loop — interpolate units each frame, sync overlays with camera
   const gameLoop = new GameLoop((dt) => {
@@ -116,29 +117,21 @@ async function init() {
     mapOverlay.syncCamera(camera.worldX, camera.worldY, camera.zoom);
     unitLabelOverlay.syncCamera(camera.worldX, camera.worldY, camera.zoom);
 
-    // Update connection indicator
+    // Update event log header with connection status
     const state = stateSource.getState();
     if (stateSource.connected && state) {
       const playerCount = Object.keys(state.players).length;
       if (stateSource instanceof ReplaySync) {
         const cursor = stateSource.getCursor();
         const total = stateSource.getLength();
-        statusEl.textContent = `replay ${cursor + 1}/${total} | tick ${state.tick} | ${playerCount} players`;
-        statusEl.style.background = "rgba(34,50,80,0.8)";
-        statusEl.style.color = "#4af";
+        eventLog.setStatus(`replay ${cursor + 1}/${total} · tick ${state.tick} · ${playerCount}p`, "#4af");
       } else if (stateSource.isFixture()) {
-        statusEl.textContent = `fixture | tick ${state.tick} | ${playerCount} players`;
-        statusEl.style.background = "rgba(80,80,34,0.8)";
-        statusEl.style.color = "#cc4";
+        eventLog.setStatus(`fixture · tick ${state.tick} · ${playerCount}p`, "#cc4");
       } else {
-        statusEl.textContent = `tick ${state.tick} | ${playerCount} players`;
-        statusEl.style.background = "rgba(34,80,34,0.8)";
-        statusEl.style.color = "#4f4";
+        eventLog.setStatus(`tick ${state.tick} · ${playerCount}p`, "#4f4");
       }
     } else {
-      statusEl.textContent = "disconnected";
-      statusEl.style.background = "rgba(80,34,34,0.8)";
-      statusEl.style.color = "#f44";
+      eventLog.setStatus("disconnected", "#f44");
     }
   });
   gameLoop.start();
