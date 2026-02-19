@@ -5,6 +5,7 @@
 export class UnitLabelOverlay {
   readonly el: HTMLDivElement;
   private labels = new Map<string, HTMLDivElement>();
+  private hoverable = new Set<string>();
 
   constructor() {
     this.el = document.createElement("div");
@@ -36,12 +37,32 @@ export class UnitLabelOverlay {
     el.innerHTML = html;
   }
 
+  /**
+   * Make a label respond to mouse hover. Idempotent — safe to call every frame.
+   * Must be called after setLabel so the element exists.
+   */
+  setHoverable(
+    unitId: string,
+    onEnter: (screenX: number, screenY: number) => void,
+    onLeave: () => void,
+  ) {
+    if (this.hoverable.has(unitId)) return;
+    const el = this.labels.get(unitId);
+    if (!el) return;
+    this.hoverable.add(unitId);
+    el.style.pointerEvents = "auto";
+    el.style.cursor = "default";
+    el.addEventListener("mouseenter", (e) => onEnter(e.clientX, e.clientY));
+    el.addEventListener("mouseleave", onLeave);
+  }
+
   /** Remove label for a unit that no longer exists */
   remove(unitId: string) {
     const el = this.labels.get(unitId);
     if (el) {
       el.remove();
       this.labels.delete(unitId);
+      this.hoverable.delete(unitId);
     }
   }
 
@@ -51,6 +72,7 @@ export class UnitLabelOverlay {
       if (!activeIds.has(id)) {
         el.remove();
         this.labels.delete(id);
+        this.hoverable.delete(id);
       }
     }
   }

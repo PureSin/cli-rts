@@ -11,7 +11,9 @@ function formatTs(ts: number): string {
 import { StateSync } from "./state/StateSync.js";
 import { ReplaySync, type EventEntry } from "./state/ReplaySync.js";
 import { ReplayControls } from "./ui/ReplayControls.js";
+import { CommanderTooltip } from "./ui/CommanderTooltip.js";
 import { EventLog } from "./ui/EventLog.js";
+import { Legend } from "./ui/Legend.js";
 import { TimelineControls } from "./ui/TimelineControls.js";
 import { GameLoop } from "./core/GameLoop.js";
 import { Camera } from "./core/Camera.js";
@@ -97,6 +99,13 @@ async function init() {
   rightPanel.appendChild(timeline.el);
   rightPanel.appendChild(eventLog.el);
   document.getElementById("ui-overlay")!.appendChild(rightPanel);
+
+  const legend = new Legend();
+  document.getElementById("ui-overlay")!.appendChild(legend.el);
+
+  const commanderTooltip = new CommanderTooltip();
+  document.getElementById("ui-overlay")!.appendChild(commanderTooltip.el);
+  unitPool.setTooltip(commanderTooltip);
 
   // Center camera on map
   camera.centerOn(500, 500);
