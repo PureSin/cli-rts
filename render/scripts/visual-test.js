@@ -10,11 +10,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const args = process.argv.slice(2);
+const packArg = args.find(arg => arg.startsWith('--pack='));
+const PACK_NAME = packArg ? packArg.split('=')[1] : 'default';
+
 const FIXTURE_PATH = path.resolve(__dirname, '../../capture/examples/game-state.example.json');
 const GOLDEN_DIR = path.resolve(__dirname, '../tests/golden');
-const GOLDEN_IMAGE = path.resolve(GOLDEN_DIR, 'example-state.png');
-const DIFF_IMAGE = path.resolve(GOLDEN_DIR, 'diff.png');
-const CURRENT_IMAGE = path.resolve(GOLDEN_DIR, 'current.png');
+// Use pack-specific filenames
+const GOLDEN_IMAGE = path.resolve(GOLDEN_DIR, `example-state-${PACK_NAME}.png`);
+const DIFF_IMAGE = path.resolve(GOLDEN_DIR, `diff-${PACK_NAME}.png`);
+const CURRENT_IMAGE = path.resolve(GOLDEN_DIR, `current-${PACK_NAME}.png`);
 
 async function wait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -60,8 +65,8 @@ async function run() {
         // Set viewport to match map size + UI space
         await page.setViewport({ width: 1200, height: 1000 });
 
-        console.log('Navigating to page...');
-        await page.goto(serverUrl, { waitUntil: 'networkidle0' });
+        console.log(`Navigating to page with pack=${PACK_NAME}...`);
+        await page.goto(`${serverUrl}?pack=${PACK_NAME}`, { waitUntil: 'networkidle0' });
 
         // Wait for canvas and initial render
         await page.waitForSelector('canvas');
