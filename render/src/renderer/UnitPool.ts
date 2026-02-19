@@ -1,5 +1,5 @@
 import { Container } from "pixi.js";
-import type { GameState, Unit, PlayerColor, UnitAction } from "../types.js";
+import type { GameState, Unit, PlayerColor, UnitAction, Player } from "../types.js";
 import { UnitRenderer } from "./UnitRenderer.js";
 import { UnitLabelOverlay } from "./UnitLabelOverlay.js";
 import { UNIT_MOVE_SPEED } from "../config.js";
@@ -14,6 +14,7 @@ interface PoolEntry {
   currentAction: UnitAction | null;
   lastClearedAt: number | undefined;
   animClear: { elapsed: number } | null;
+  baseAlpha: number;
 }
 
 export class UnitPool {
@@ -30,11 +31,11 @@ export class UnitPool {
 
     for (const player of Object.values(state.players)) {
       // Commander
-      this.syncUnit(player.commander, player.color, activeIds);
+      this.syncUnit(player.commander, player.color, player.status, activeIds);
 
       // Subagent units
       for (const unit of Object.values(player.units)) {
-        this.syncUnit(unit, player.color, activeIds);
+        this.syncUnit(unit, player.color, player.status, activeIds);
       }
     }
 
@@ -51,8 +52,10 @@ export class UnitPool {
     this.labelOverlay?.prune(activeIds);
   }
 
-  private syncUnit(unit: Unit, playerColor: PlayerColor, activeIds: Set<string>) {
+  private syncUnit(unit: Unit, playerColor: PlayerColor, playerStatus: Player["status"], activeIds: Set<string>) {
     activeIds.add(unit.id);
+
+    const baseAlpha = playerStatus === "disconnected" ? 0.2 : playerStatus === "idle" ? 0.6 : 1;
 
     let entry = this.pool.get(unit.id);
     if (!entry) {
@@ -68,10 +71,13 @@ export class UnitPool {
         currentAction: unit.currentAction,
         lastClearedAt: unit.clearedAt,
         animClear: null,
+        baseAlpha,
       };
       this.pool.set(unit.id, entry);
       this.container.addChild(renderer.container);
     }
+
+    entry.baseAlpha = baseAlpha;
 
     // Update target position
     const target = unit.targetPosition ?? unit.position;
@@ -119,13 +125,15 @@ export class UnitPool {
         entry.animClear.elapsed += dt * 1000;
         const t = entry.animClear.elapsed;
         if (t < CLEAR_FADE_OUT) {
-          entry.renderer.container.alpha = 1 - t / CLEAR_FADE_OUT;
+          entry.renderer.container.alpha = entry.baseAlpha * (1 - t / CLEAR_FADE_OUT);
         } else if (t < CLEAR_TOTAL) {
-          entry.renderer.container.alpha = (t - CLEAR_FADE_OUT) / CLEAR_FADE_IN;
+          entry.renderer.container.alpha = entry.baseAlpha * ((t - CLEAR_FADE_OUT) / CLEAR_FADE_IN);
         } else {
-          entry.renderer.container.alpha = 1;
+          entry.renderer.container.alpha = entry.baseAlpha;
           entry.animClear = null;
         }
+      } else {
+        entry.renderer.container.alpha = entry.baseAlpha;
       }
 
       // Update HTML label position
