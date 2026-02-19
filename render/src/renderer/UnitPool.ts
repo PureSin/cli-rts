@@ -12,6 +12,8 @@ interface PoolEntry {
   targetY: number;
   displayName: string;
   currentAction: UnitAction | null;
+  lastClearedAt: number | undefined;
+  animClear: { elapsed: number } | null;
 }
 
 export class UnitPool {
@@ -64,6 +66,8 @@ export class UnitPool {
         targetY: unit.position.y,
         displayName: unit.displayName,
         currentAction: unit.currentAction,
+        lastClearedAt: unit.clearedAt,
+        animClear: null,
       };
       this.pool.set(unit.id, entry);
       this.container.addChild(renderer.container);
@@ -78,9 +82,19 @@ export class UnitPool {
     entry.renderer.updateStatus(unit.status, unit.currentAction?.actionType ?? undefined);
     entry.displayName = unit.displayName;
     entry.currentAction = unit.currentAction;
+
+    // Detect a new clearedAt timestamp → trigger rebirth animation
+    if (unit.clearedAt !== undefined && unit.clearedAt !== entry.lastClearedAt) {
+      entry.lastClearedAt = unit.clearedAt;
+      entry.animClear = { elapsed: 0 };
+    }
   }
 
   update(dt: number) {
+    const CLEAR_FADE_OUT = 300; // ms: alpha 1→0
+    const CLEAR_FADE_IN  = 400; // ms: alpha 0→1
+    const CLEAR_TOTAL    = CLEAR_FADE_OUT + CLEAR_FADE_IN;
+
     for (const [id, entry] of this.pool) {
       const dx = entry.targetX - entry.visualX;
       const dy = entry.targetY - entry.visualY;
@@ -99,6 +113,20 @@ export class UnitPool {
 
       entry.renderer.container.x = entry.visualX;
       entry.renderer.container.y = entry.visualY;
+
+      // Drive rebirth pulse animation (fade out then fade in)
+      if (entry.animClear) {
+        entry.animClear.elapsed += dt * 1000;
+        const t = entry.animClear.elapsed;
+        if (t < CLEAR_FADE_OUT) {
+          entry.renderer.container.alpha = 1 - t / CLEAR_FADE_OUT;
+        } else if (t < CLEAR_TOTAL) {
+          entry.renderer.container.alpha = (t - CLEAR_FADE_OUT) / CLEAR_FADE_IN;
+        } else {
+          entry.renderer.container.alpha = 1;
+          entry.animClear = null;
+        }
+      }
 
       // Update HTML label position
       if (this.labelOverlay) {

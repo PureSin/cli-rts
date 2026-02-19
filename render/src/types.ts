@@ -46,7 +46,8 @@ export type GameEventType =
   | "unit_waiting"
   | "objective_completed"
   | "player_idle"
-  | "player_compact";
+  | "player_compact"
+  | "session_clear";
 
 export type PlayerColor = "blue" | "red" | "green" | "yellow" | "purple" | "orange";
 
@@ -92,6 +93,7 @@ export interface Unit {
   currentAction: UnitAction | null;
   spawnedAt: number;
   lastActionAt: number;
+  clearedAt?: number;
 }
 
 export interface Player {
