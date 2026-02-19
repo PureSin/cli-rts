@@ -1,4 +1,13 @@
-import type { GameState, GameEvent, GameEventType } from "../types.js";
+import type { GameState, GameEvent, GameEventType, PlayerColor } from "../types.js";
+
+const PLAYER_COLOR_CSS: Record<PlayerColor, string> = {
+  blue: "#4488ff",
+  red: "#ff4444",
+  green: "#44cc44",
+  yellow: "#cccc44",
+  purple: "#aa44ff",
+  orange: "#ff8844",
+};
 
 const TYPE_COLOR: Partial<Record<GameEventType, string>> = {
   player_joined: "#4af",
@@ -113,10 +122,10 @@ export class EventLog {
     const lastId = events[events.length - 1].id;
     if (lastId === this.lastEventId) return;
     this.lastEventId = lastId;
-    this.render(events);
+    this.render(events, state.players);
   }
 
-  private render(events: GameEvent[]) {
+  private render(events: GameEvent[], players: GameState["players"]) {
     // Track scroll position — if the user has scrolled up, don't force-scroll down
     const atBottom =
       this.list.scrollHeight - this.list.scrollTop - this.list.clientHeight < 40;
@@ -124,6 +133,25 @@ export class EventLog {
     this.list.innerHTML = "";
 
     for (const evt of events) {
+      if (evt.type === "session_clear") {
+        const playerColor = players[evt.playerId]?.color;
+        const color = playerColor ? PLAYER_COLOR_CSS[playerColor] : "#445";
+        const divider = document.createElement("div");
+        divider.style.cssText = [
+          "padding:4px 8px",
+          "border-top:1px solid #0e0e18",
+          "border-bottom:1px solid #0e0e18",
+          "text-align:center",
+          `color:${color}`,
+          "opacity:0.65",
+          "font-size:10px",
+          "letter-spacing:2px",
+        ].join(";");
+        divider.textContent = "↺  cleared";
+        this.list.appendChild(divider);
+        continue;
+      }
+
       const row = document.createElement("div");
       row.style.cssText = [
         "padding:3px 8px",

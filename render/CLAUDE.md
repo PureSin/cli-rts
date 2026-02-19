@@ -53,7 +53,10 @@ render/
 │   │   └── UnitLabelOverlay.ts         # HTML labels for units (crisp at any zoom)
 │   │
 │   ├── ui/
-│   │   └── ReplayControls.ts           # Replay mode: slider, play/pause, speed, event label
+│   │   ├── ReplayControls.ts           # Replay mode: slider, play/pause, speed, event label
+│   │   ├── EventLog.ts                 # Scrollable event feed panel (top-right)
+│   │   ├── Legend.ts                   # Terrain color + unit shape key (top-left)
+│   │   └── CommanderTooltip.ts         # Hover tooltip with player stats (model, tools, files, etc.)
 │   │
 │   └── utils/
 │       ├── RegionSanitizer.ts          # Cleans messy region IDs → displayable labels
@@ -62,7 +65,7 @@ render/
 
 ## Key Architecture Decisions
 
-1. **HTML overlays for UI, PixiJS for the game world.** HTML is better for text, scrolling, layout. PixiJS handles sprite/shape rendering. Canvas fills viewport, HTML divs positioned on top with `pointer-events:none`.
+1. **HTML overlays for UI, PixiJS for the game world.** HTML is better for text, scrolling, layout. PixiJS handles sprite/shape rendering. Canvas fills viewport, HTML divs positioned on top with `pointer-events:none` by default. Individual elements opt in to pointer events (e.g. commander labels set `pointer-events:auto` for hover tooltips; PixiJS commander containers use `eventMode="static"` for canvas-level hover).
 
 2. **Types copied, not shared.** `render/` and `capture/` are independent packages. ~145 lines of types copied to avoid monorepo complexity. HTTP/JSON is the contract boundary.
 

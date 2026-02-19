@@ -262,6 +262,7 @@ export function handleSessionStart(state: GameState, payload: Record<string, unk
   const model = (payload.model as string) ?? "unknown";
   const permissionMode = (payload.permission_mode as string) ?? "default";
   const cwd = (payload.cwd as string) ?? state.repo.path;
+  const source = payload.source as string | undefined;
 
   // Always prefer the cwd from the session-start payload — it's the authoritative
   // working directory where Claude Code is actually running, regardless of where
@@ -269,6 +270,23 @@ export function handleSessionStart(state: GameState, payload: Record<string, unk
   if (cwd) {
     state.repo.path = cwd;
     state.repo.name = cwd.split("/").filter(Boolean).pop() ?? "unknown";
+  }
+
+  if (source === "clear") {
+    const player = state.players[sessionId];
+    if (player) {
+      player.status = "active";
+      player.model = model;
+      player.permissionMode = permissionMode;
+      player.lastActivityAt = Date.now();
+      player.commander.status = "idle";
+      player.commander.currentAction = null;
+      player.commander.clearedAt = Date.now();
+      // Despawn all subagents immediately
+      player.units = {};
+      return addEvent(state, "player_joined", sessionId, sessionId,
+        `Player rejoined (${model})`, { source });
+    }
   }
 
   const commander = createUnit(sessionId, "commander", "Commander");
@@ -304,6 +322,14 @@ export function handleSessionStart(state: GameState, payload: Record<string, unk
 export function handleSessionEnd(state: GameState, payload: Record<string, unknown>): GameEvent {
   bumpTick(state);
   const sessionId = payload.session_id as string;
+  const reason = payload.reason as string | undefined;
+
+  if (reason === "clear") {
+    // Player is immediately reconnecting — keep them alive, just mark the boundary
+    return addEvent(state, "session_clear", sessionId, sessionId,
+      "Memory cleared — session continues", { reason });
+  }
+
   const player = state.players[sessionId];
   if (player) {
     player.status = "disconnected";
@@ -313,7 +339,7 @@ export function handleSessionEnd(state: GameState, payload: Record<string, unkno
     }
   }
   return addEvent(state, "player_left", sessionId, sessionId, "Player disconnected", {
-    reason: payload.reason,
+    reason,
   });
 }
 

@@ -1,7 +1,8 @@
 import { Container } from "pixi.js";
-import type { GameState, Unit, PlayerColor, UnitAction } from "../types.js";
+import type { GameState, Unit, PlayerColor, UnitAction, Player } from "../types.js";
 import { UnitRenderer } from "./UnitRenderer.js";
 import { UnitLabelOverlay } from "./UnitLabelOverlay.js";
+import type { CommanderTooltip } from "../ui/CommanderTooltip.js";
 import { UNIT_MOVE_SPEED } from "../config.js";
 
 interface PoolEntry {
@@ -12,27 +13,36 @@ interface PoolEntry {
   targetY: number;
   displayName: string;
   currentAction: UnitAction | null;
+  lastClearedAt: number | undefined;
+  animClear: { elapsed: number } | null;
+  baseAlpha: number;
+  playerRef: Player | null;  // non-null for commanders
 }
 
 export class UnitPool {
   readonly container = new Container();
   private pool = new Map<string, PoolEntry>();
   private labelOverlay: UnitLabelOverlay | null = null;
+  private tooltip: CommanderTooltip | null = null;
 
   setLabelOverlay(overlay: UnitLabelOverlay) {
     this.labelOverlay = overlay;
+  }
+
+  setTooltip(tooltip: CommanderTooltip) {
+    this.tooltip = tooltip;
   }
 
   syncUnits(state: GameState) {
     const activeIds = new Set<string>();
 
     for (const player of Object.values(state.players)) {
-      // Commander
-      this.syncUnit(player.commander, player.color, activeIds);
+      // Commander — pass full player ref for tooltip
+      this.syncUnit(player.commander, player.color, player.status, player, activeIds);
 
       // Subagent units
       for (const unit of Object.values(player.units)) {
-        this.syncUnit(unit, player.color, activeIds);
+        this.syncUnit(unit, player.color, player.status, null, activeIds);
       }
     }
 
@@ -49,8 +59,10 @@ export class UnitPool {
     this.labelOverlay?.prune(activeIds);
   }
 
-  private syncUnit(unit: Unit, playerColor: PlayerColor, activeIds: Set<string>) {
+  private syncUnit(unit: Unit, playerColor: PlayerColor, playerStatus: Player["status"], player: Player | null, activeIds: Set<string>) {
     activeIds.add(unit.id);
+
+    const baseAlpha = playerStatus === "disconnected" ? 0.2 : playerStatus === "idle" ? 0.6 : 1;
 
     let entry = this.pool.get(unit.id);
     if (!entry) {
@@ -64,10 +76,27 @@ export class UnitPool {
         targetY: unit.position.y,
         displayName: unit.displayName,
         currentAction: unit.currentAction,
+        lastClearedAt: unit.clearedAt,
+        animClear: null,
+        baseAlpha,
+        playerRef: player,
       };
       this.pool.set(unit.id, entry);
       this.container.addChild(renderer.container);
+
+      // Enable hover tooltip on the PixiJS sprite for commander units
+      if (player !== null) {
+        const capturedEntry = entry;
+        renderer.container.eventMode = "static";
+        renderer.container.on("pointerenter", (e) => {
+          if (capturedEntry.playerRef) this.tooltip?.show(capturedEntry.playerRef, e.clientX, e.clientY);
+        });
+        renderer.container.on("pointerleave", () => this.tooltip?.hide());
+      }
     }
+
+    entry.baseAlpha = baseAlpha;
+    entry.playerRef = player;
 
     // Update target position
     const target = unit.targetPosition ?? unit.position;
@@ -78,9 +107,19 @@ export class UnitPool {
     entry.renderer.updateStatus(unit.status, unit.currentAction?.actionType ?? undefined);
     entry.displayName = unit.displayName;
     entry.currentAction = unit.currentAction;
+
+    // Detect a new clearedAt timestamp → trigger rebirth animation
+    if (unit.clearedAt !== undefined && unit.clearedAt !== entry.lastClearedAt) {
+      entry.lastClearedAt = unit.clearedAt;
+      entry.animClear = { elapsed: 0 };
+    }
   }
 
   update(dt: number) {
+    const CLEAR_FADE_OUT = 300; // ms: alpha 1→0
+    const CLEAR_FADE_IN  = 400; // ms: alpha 0→1
+    const CLEAR_TOTAL    = CLEAR_FADE_OUT + CLEAR_FADE_IN;
+
     for (const [id, entry] of this.pool) {
       const dx = entry.targetX - entry.visualX;
       const dy = entry.targetY - entry.visualY;
@@ -100,6 +139,22 @@ export class UnitPool {
       entry.renderer.container.x = entry.visualX;
       entry.renderer.container.y = entry.visualY;
 
+      // Drive rebirth pulse animation (fade out then fade in)
+      if (entry.animClear) {
+        entry.animClear.elapsed += dt * 1000;
+        const t = entry.animClear.elapsed;
+        if (t < CLEAR_FADE_OUT) {
+          entry.renderer.container.alpha = entry.baseAlpha * (1 - t / CLEAR_FADE_OUT);
+        } else if (t < CLEAR_TOTAL) {
+          entry.renderer.container.alpha = entry.baseAlpha * ((t - CLEAR_FADE_OUT) / CLEAR_FADE_IN);
+        } else {
+          entry.renderer.container.alpha = entry.baseAlpha;
+          entry.animClear = null;
+        }
+      } else {
+        entry.renderer.container.alpha = entry.baseAlpha;
+      }
+
       // Update HTML label position
       if (this.labelOverlay) {
         let actionText: string | null = null;
@@ -108,6 +163,17 @@ export class UnitPool {
           actionText = `${entry.currentAction.toolName}: ${fname}`;
         }
         this.labelOverlay.setLabel(id, entry.visualX, entry.visualY, entry.displayName, actionText);
+
+        // Wire hover tooltip for commanders (idempotent)
+        if (entry.playerRef && this.tooltip) {
+          const e = entry;
+          const t = this.tooltip;
+          this.labelOverlay.setHoverable(
+            id,
+            (sx, sy) => { if (e.playerRef) t.show(e.playerRef, sx, sy); },
+            () => t.hide(),
+          );
+        }
       }
     }
   }

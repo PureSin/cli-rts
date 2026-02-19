@@ -11,7 +11,9 @@ function formatTs(ts: number): string {
 import { StateSync } from "./state/StateSync.js";
 import { ReplaySync, type EventEntry } from "./state/ReplaySync.js";
 import { ReplayControls } from "./ui/ReplayControls.js";
+import { CommanderTooltip } from "./ui/CommanderTooltip.js";
 import { EventLog } from "./ui/EventLog.js";
+import { Legend } from "./ui/Legend.js";
 import { TimelineControls } from "./ui/TimelineControls.js";
 import { GameLoop } from "./core/GameLoop.js";
 import { Camera } from "./core/Camera.js";
@@ -98,6 +100,13 @@ async function init() {
   rightPanel.appendChild(eventLog.el);
   document.getElementById("ui-overlay")!.appendChild(rightPanel);
 
+  const legend = new Legend();
+  document.getElementById("ui-overlay")!.appendChild(legend.el);
+
+  const commanderTooltip = new CommanderTooltip();
+  document.getElementById("ui-overlay")!.appendChild(commanderTooltip.el);
+  unitPool.setTooltip(commanderTooltip);
+
   // Center camera on map
   camera.centerOn(500, 500);
 
@@ -174,15 +183,18 @@ async function init() {
     // Update event log header with connection status
     const state = stateSource.getState();
     if (stateSource.connected && state) {
-      const playerCount = Object.keys(state.players).length;
+      const players = Object.values(state.players);
+      const activePlayers = players.filter(p => p.status === "active" || p.status === "idle").length;
+      const totalPlayers = players.length;
+      const playerStr = `${activePlayers} active/${totalPlayers}p`;
       if (stateSource instanceof ReplaySync) {
         const cursor = stateSource.getCursor();
         const total = stateSource.getLength();
-        eventLog.setStatus(`replay ${cursor + 1}/${total} · tick ${state.tick} · ${playerCount}p`, "#4af");
+        eventLog.setStatus(`replay ${cursor + 1}/${total} · tick ${state.tick} · ${playerStr}`, "#4af");
       } else if (stateSource.isFixture()) {
-        eventLog.setStatus(`fixture · tick ${state.tick} · ${playerCount}p`, "#cc4");
+        eventLog.setStatus(`fixture · tick ${state.tick} · ${playerStr}`, "#cc4");
       } else {
-        eventLog.setStatus(`tick ${state.tick} · ${playerCount}p`, "#4f4");
+        eventLog.setStatus(`tick ${state.tick} · ${playerStr}`, "#4f4");
       }
     } else {
       eventLog.setStatus("disconnected", "#f44");

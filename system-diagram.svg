@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 555" width="940" height="555">
+  <defs>
+    <marker id="ah-b" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#3a7aaa"/>
+    </marker>
+    <marker id="ah-g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#3a8a3a"/>
+    </marker>
+    <marker id="ah-y" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#7a7a2a"/>
+    </marker>
+    <marker id="ah-p" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#6a4aaa"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="940" height="555" fill="#0a0a0f"/>
+
+  <!-- Title -->
+  <text x="470" y="25" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" fill="#556" letter-spacing="3">CLI-RTS  ·  SYSTEM  DIAGRAM</text>
+  <line x1="20" y1="33" x2="920" y2="33" stroke="#181828" stroke-width="1"/>
+
+  <!-- ════════════════════════════════════
+       CLAUDE CODE
+       ════════════════════════════════════ -->
+  <rect x="20" y="44" width="162" height="348" rx="5" fill="#0e1828" stroke="#2a5888" stroke-width="1.5"/>
+  <rect x="21" y="45" width="160" height="24" rx="4" fill="#162840"/>
+  <rect x="21" y="58"  width="160" height="11"      fill="#162840"/>
+  <text x="102" y="62" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" font-weight="bold" fill="#6aaadd" letter-spacing="1.5">CLAUDE CODE</text>
+
+  <text x="34" y="88"  font-family="'Courier New',monospace" font-size="8"   fill="#2e5878">── hook events ──</text>
+  <text x="34" y="104" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">SessionStart</text>
+  <text x="34" y="117" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">SessionEnd</text>
+  <text x="34" y="130" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">UserPromptSubmit</text>
+  <text x="34" y="143" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">Stop</text>
+  <text x="34" y="156" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">PreToolUse</text>
+  <text x="34" y="169" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">PostToolUse</text>
+  <text x="34" y="182" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">PostToolUseFailure</text>
+  <text x="34" y="195" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">SubagentStart</text>
+  <text x="34" y="208" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">SubagentStop</text>
+  <text x="34" y="221" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">PermissionRequest</text>
+  <text x="34" y="234" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">Notification</text>
+  <text x="34" y="247" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">TaskCompleted</text>
+  <text x="34" y="260" font-family="'Courier New',monospace" font-size="8.5" fill="#5a8aaa">PreCompact</text>
+
+  <line x1="34" y1="272" x2="170" y2="272" stroke="#1a2a3a" stroke-width="1"/>
+
+  <text x="34" y="288" font-family="'Courier New',monospace" font-size="8"   fill="#2e5878">── payload ──</text>
+  <text x="34" y="304" font-family="'Courier New',monospace" font-size="8"   fill="#4a7898">JSON via stdin to</text>
+  <text x="34" y="317" font-family="'Courier New',monospace" font-size="8"   fill="#4a7898">cli-rts emit</text>
+  <text x="34" y="338" font-family="'Courier New',monospace" font-size="7.5" fill="#2a4a68">async: true</text>
+  <text x="34" y="351" font-family="'Courier New',monospace" font-size="7.5" fill="#2a4a68">never blocks agent</text>
+  <text x="34" y="364" font-family="'Courier New',monospace" font-size="7.5" fill="#2a4a68">cli-rts init installs hooks</text>
+  <text x="34" y="377" font-family="'Courier New',monospace" font-size="7.5" fill="#2a4a68">into .claude/settings.json</text>
+
+  <!-- ════════════════════════════════════
+       CLI-RTS EMIT
+       ════════════════════════════════════ -->
+  <rect x="228" y="196" width="118" height="72" rx="5" fill="#0e1a0e" stroke="#2a6a2a" stroke-width="1.5"/>
+  <rect x="229" y="197" width="116" height="22" rx="4" fill="#152815"/>
+  <rect x="229" y="209"  width="116" height="10"       fill="#152815"/>
+  <text x="287" y="213" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#6ad06a" letter-spacing="1">cli-rts emit</text>
+  <text x="240" y="232" font-family="'Courier New',monospace" font-size="8"   fill="#4a8a4a">reads JSON stdin</text>
+  <text x="240" y="245" font-family="'Courier New',monospace" font-size="8"   fill="#4a8a4a">POSTs to :4175</text>
+  <text x="240" y="258" font-family="'Courier New',monospace" font-size="7.5" fill="#2a5a2a">exit 0 always</text>
+
+  <!-- ════════════════════════════════════
+       DAEMON :4175
+       ════════════════════════════════════ -->
+  <rect x="390" y="44" width="208" height="295" rx="5" fill="#0e1a0e" stroke="#3a8a3a" stroke-width="1.5"/>
+  <rect x="391" y="45" width="206" height="24" rx="4" fill="#162816"/>
+  <rect x="391" y="58"  width="206" height="11"       fill="#162816"/>
+  <text x="494" y="62" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" font-weight="bold" fill="#6ad06a" letter-spacing="1.5">DAEMON  :4175</text>
+
+  <text x="404" y="88"  font-family="'Courier New',monospace" font-size="8"   fill="#2a6a2a">── state engine ──</text>
+  <text x="404" y="104" font-family="'Courier New',monospace" font-size="8.5" fill="#4a8a4a">game-state.ts</text>
+  <text x="404" y="117" font-family="'Courier New',monospace" font-size="8.5" fill="#4a8a4a">event-handlers.ts</text>
+  <text x="404" y="130" font-family="'Courier New',monospace" font-size="7.5" fill="#2a5a2a">GameState in memory</text>
+  <text x="404" y="142" font-family="'Courier New',monospace" font-size="7.5" fill="#2a5a2a">tick-based mutation</text>
+
+  <line x1="404" y1="153" x2="586" y2="153" stroke="#1a3a1a" stroke-width="1"/>
+
+  <text x="404" y="169" font-family="'Courier New',monospace" font-size="8"   fill="#2a6a2a">── endpoints ──</text>
+  <text x="404" y="185" font-family="'Courier New',monospace" font-size="8.5" fill="#4a8a4a">POST  /events</text>
+  <text x="404" y="198" font-family="'Courier New',monospace" font-size="8.5" fill="#4a8a4a">GET   /state</text>
+  <text x="404" y="211" font-family="'Courier New',monospace" font-size="8.5" fill="#4a8a4a">GET   /events</text>
+  <text x="404" y="224" font-family="'Courier New',monospace" font-size="8.5" fill="#4a8a4a">GET   /health</text>
+
+  <line x1="404" y1="235" x2="586" y2="235" stroke="#1a3a1a" stroke-width="1"/>
+
+  <text x="404" y="251" font-family="'Courier New',monospace" font-size="8"   fill="#2a6a2a">── game event types ──</text>
+  <text x="404" y="267" font-family="'Courier New',monospace" font-size="7.5" fill="#3a7a3a">player_joined · player_left</text>
+  <text x="404" y="279" font-family="'Courier New',monospace" font-size="7.5" fill="#3a7a3a">session_clear · player_idle</text>
+  <text x="404" y="291" font-family="'Courier New',monospace" font-size="7.5" fill="#3a7a3a">unit_spawned · unit_despawned</text>
+  <text x="404" y="303" font-family="'Courier New',monospace" font-size="7.5" fill="#3a7a3a">unit_action_* · player_compact</text>
+  <text x="404" y="315" font-family="'Courier New',monospace" font-size="7.5" fill="#3a7a3a">objective_completed</text>
+  <text x="404" y="330" font-family="'Courier New',monospace" font-size="7.5" fill="#2a5a2a">200 events max in log</text>
+
+  <!-- ════════════════════════════════════
+       .CLI-RTS/
+       ════════════════════════════════════ -->
+  <rect x="390" y="358" width="208" height="118" rx="5" fill="#18180e" stroke="#6a6a28" stroke-width="1.5"/>
+  <rect x="391" y="359" width="206" height="24" rx="4" fill="#282818"/>
+  <rect x="391" y="372"  width="206" height="11"       fill="#282818"/>
+  <text x="494" y="376" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" font-weight="bold" fill="#c8c870" letter-spacing="1.5">.cli-rts/</text>
+
+  <text x="404" y="400" font-family="'Courier New',monospace" font-size="8.5" fill="#9a9a50">game-state.json</text>
+  <text x="404" y="413" font-family="'Courier New',monospace" font-size="7.5" fill="#6a6a38">full snapshot · overwritten each event</text>
+  <text x="404" y="432" font-family="'Courier New',monospace" font-size="8.5" fill="#9a9a50">event-log.jsonl</text>
+  <text x="404" y="445" font-family="'Courier New',monospace" font-size="7.5" fill="#6a6a38">append-only · full state per line</text>
+  <text x="404" y="465" font-family="'Courier New',monospace" font-size="7"   fill="#504830">{seq, ts, eventType, payload, state}</text>
+
+  <!-- ════════════════════════════════════
+       RENDER (browser)
+       ════════════════════════════════════ -->
+  <rect x="644" y="44" width="276" height="492" rx="5" fill="#0f0d20" stroke="#5a3a88" stroke-width="1.5"/>
+  <rect x="645" y="45" width="274" height="24" rx="4" fill="#1e1535"/>
+  <rect x="645" y="58"  width="274" height="11"       fill="#1e1535"/>
+  <text x="782" y="62" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" font-weight="bold" fill="#a87ae8" letter-spacing="1.5">RENDER  (browser)</text>
+
+  <text x="658" y="88"  font-family="'Courier New',monospace" font-size="8"   fill="#4a2a78">── modes ──</text>
+  <text x="658" y="104" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">Live</text>
+  <text x="696" y="104" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">polls GET /state · 500ms</text>
+  <text x="658" y="117" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">Fixture</text>
+  <text x="696" y="117" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">loads game-state.json</text>
+  <text x="658" y="130" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">Replay</text>
+  <text x="696" y="130" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">scrubs event-log.jsonl</text>
+
+  <line x1="658" y1="141" x2="908" y2="141" stroke="#1a1230" stroke-width="1"/>
+
+  <text x="658" y="157" font-family="'Courier New',monospace" font-size="8"   fill="#4a2a78">── state sources ──</text>
+  <text x="658" y="173" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">StateSync</text>
+  <text x="658" y="186" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">live / fixture polling</text>
+  <text x="658" y="203" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">ReplaySync</text>
+  <text x="658" y="216" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">seek · play · pause · 0.5–4× speed</text>
+
+  <line x1="658" y1="227" x2="908" y2="227" stroke="#1a1230" stroke-width="1"/>
+
+  <text x="658" y="243" font-family="'Courier New',monospace" font-size="8"   fill="#4a2a78">── PixiJS canvas ──</text>
+  <text x="658" y="259" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">MapRenderer</text>
+  <text x="658" y="272" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">terrain regions as colored rects</text>
+  <text x="658" y="289" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">UnitPool</text>
+  <text x="658" y="302" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">commander · scout · warrior · …</text>
+  <text x="658" y="315" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">baseAlpha by player status</text>
+  <text x="658" y="328" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">/clear rebirth pulse animation</text>
+  <text x="658" y="345" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">Camera</text>
+  <text x="658" y="358" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">pan (drag) · zoom (scroll)</text>
+
+  <line x1="658" y1="369" x2="908" y2="369" stroke="#1a1230" stroke-width="1"/>
+
+  <text x="658" y="385" font-family="'Courier New',monospace" font-size="8"   fill="#4a2a78">── HTML overlays ──</text>
+  <text x="658" y="401" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">MapOverlay</text>
+  <text x="658" y="414" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">region labels · file lists (clipped)</text>
+  <text x="658" y="431" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">UnitLabelOverlay</text>
+  <text x="658" y="444" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">unit name · action · hover target</text>
+
+  <line x1="658" y1="455" x2="908" y2="455" stroke="#1a1230" stroke-width="1"/>
+
+  <text x="658" y="471" font-family="'Courier New',monospace" font-size="8"   fill="#4a2a78">── UI panels ──</text>
+  <text x="658" y="487" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">EventLog</text>
+  <text x="658" y="500" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">feed · ↺ session_clear divider</text>
+  <text x="658" y="513" font-family="'Courier New',monospace" font-size="8.5" fill="#8a6acc">Legend  ·  CommanderTooltip</text>
+  <text x="658" y="526" font-family="'Courier New',monospace" font-size="7.5" fill="#4a3a6a">terrain key · model/stats on hover</text>
+
+  <!-- ════════════════════════════════════
+       ARROWS
+       ════════════════════════════════════ -->
+
+  <!-- 1: Claude Code → cli-rts emit (async hooks) -->
+  <line x1="182" y1="228" x2="226" y2="228"
+        stroke="#3a7aaa" stroke-width="1.5" marker-end="url(#ah-b)"/>
+  <text x="183" y="221" font-family="'Courier New',monospace" font-size="7" fill="#3a7aaa">async hooks</text>
+
+  <!-- 2: cli-rts emit → Daemon (POST /events) -->
+  <line x1="346" y1="222" x2="388" y2="192"
+        stroke="#3a8a3a" stroke-width="1.5" marker-end="url(#ah-g)"/>
+  <text x="348" y="213" font-family="'Courier New',monospace" font-size="7" fill="#3a8a3a">POST /events</text>
+
+  <!-- 3: Daemon → .cli-rts/ (writes, vertical) -->
+  <line x1="494" y1="339" x2="494" y2="356"
+        stroke="#7a7a2a" stroke-width="1.5" marker-end="url(#ah-y)"/>
+  <text x="500" y="351" font-family="'Courier New',monospace" font-size="7" fill="#7a7a2a">writes</text>
+
+  <!-- 4: Daemon → Render (GET /state, live polling) -->
+  <line x1="598" y1="118" x2="642" y2="118"
+        stroke="#6a4aaa" stroke-width="1.5" marker-end="url(#ah-p)"/>
+  <text x="600" y="111" font-family="'Courier New',monospace" font-size="7" fill="#6a4aaa">GET /state · live</text>
+
+  <!-- 5: .cli-rts/ → Render (fixture / replay, dashed curve) -->
+  <path d="M 598 420 C 622 420 622 315 642 315"
+        fill="none" stroke="#7a7a2a" stroke-width="1.5"
+        stroke-dasharray="5,3" marker-end="url(#ah-y)"/>
+  <text x="604" y="380" font-family="'Courier New',monospace" font-size="7" fill="#7a7a2a">fixture /</text>
+  <text x="604" y="391" font-family="'Courier New',monospace" font-size="7" fill="#7a7a2a">replay</text>
+
+</svg>
