@@ -22,3 +22,7 @@ build/
 
 # cli-rts runtime
 .cli-rts/
+
+# Visual Tests
+render/tests/golden/current.png
+render/tests/golden/diff.png

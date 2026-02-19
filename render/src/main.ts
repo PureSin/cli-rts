@@ -1,5 +1,7 @@
 import { Application } from "pixi.js";
 import type { GameState } from "./types.js";
+import { DEFAULT_PACK } from "./config.js";
+import { loadPack } from "./assets/AssetLoader.js";
 
 function formatTs(ts: number): string {
   const d = new Date(ts);
@@ -40,6 +42,9 @@ async function loadReplayEntries(): Promise<EventEntry[]> {
 }
 
 async function init() {
+  // Load default assets
+  await loadPack(DEFAULT_PACK);
+
   // Create PixiJS application
   const app = new Application();
   await app.init({

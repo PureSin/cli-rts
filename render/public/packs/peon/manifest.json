@@ -1,0 +1,48 @@
+{
+    "name": "peon-orc",
+    "version": "1.0.0",
+    "description": "Warcraft III Orc Peon Theme",
+    "author": "Blizzard / Community",
+    "base": "default",
+    "assets": {
+        "units": {
+            "commander": {
+                "sprite": "assets/icons/grunt.png",
+                "scale": 1.5
+            },
+            "scout": {
+                "sprite": "assets/icons/peon.png",
+                "scale": 1.0
+            },
+            "warrior": {
+                "sprite": "assets/icons/grunt.png",
+                "scale": 1.2
+            },
+            "strategist": {
+                "sprite": "assets/icons/grunt.png",
+                "scale": 1.1
+            },
+            "soldier": {
+                "sprite": "assets/icons/grunt.png",
+                "scale": 1.2
+            },
+            "worker": {
+                "sprite": "assets/icons/peon.png",
+                "scale": 1.0
+            },
+            "specialist": {
+                "sprite": "assets/icons/grunt.png",
+                "scale": 1.3
+            }
+        },
+        "sounds": {
+            "ready": "assets/sounds/ready.ogg",
+            "warcry": "assets/sounds/warcry.ogg",
+            "work": "assets/sounds/work.ogg",
+            "pissed": "assets/sounds/pissed.ogg"
+        },
+        "ui": {
+            "font": "LifeCraft"
+        }
+    }
+}

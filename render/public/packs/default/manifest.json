@@ -1,0 +1,21 @@
+{
+  "name": "default",
+  "version": "1.0.0",
+  "description": "System Default (Geometric Shapes)",
+  "author": "System",
+  "assets": {
+    "units": {
+      "commander":  { "shape": "circle",   "size": 14 },
+      "scout":      { "shape": "diamond",  "size": 10 },
+      "warrior":    { "shape": "square",   "size": 11 },
+      "strategist": { "shape": "triangle", "size": 11 },
+      "soldier":    { "shape": "pentagon", "size": 10 },
+      "specialist": { "shape": "hexagon",  "size": 10 }
+    },
+    "statusIndicators": {
+      "acting":  { "color": "0x44ff44" },
+      "waiting": { "color": "0xffcc00" },
+      "failed":  { "color": "0xff2222" }
+    }
+  }
+}

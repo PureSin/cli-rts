@@ -1,10 +1,10 @@
 import { Container, Graphics } from "pixi.js";
 import type { Unit, PlayerColor, UnitStatus } from "../types.js";
-import { createUnitGraphics, createStatusIndicator } from "../assets/AssetLoader.js";
+import { createUnitGraphics, createStatusIndicator, playSound } from "../assets/AssetLoader.js";
 
 export class UnitRenderer {
   readonly container = new Container();
-  private shape: Graphics;
+  private shape: Container;
   private statusIndicator: Graphics | null = null;
   private lastStatus: UnitStatus | null = null;
   private lastActionType: string | undefined;
@@ -17,6 +17,17 @@ export class UnitRenderer {
 
   updateStatus(status: UnitStatus, actionType?: string) {
     if (status === this.lastStatus && actionType === this.lastActionType) return;
+
+    // Play sounds on status change
+    if (status !== this.lastStatus || (status === "acting" && actionType !== this.lastActionType)) {
+      if (status === "spawning" && this.lastStatus !== "spawning") playSound("ready");
+      if (status === "failed") playSound("pissed");
+      if (status === "acting") {
+        if (actionType === "attacking") playSound("warcry");
+        else playSound("work");
+      }
+    }
+
     this.lastStatus = status;
     this.lastActionType = actionType;
 
