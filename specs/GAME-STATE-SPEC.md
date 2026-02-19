@@ -22,9 +22,9 @@ A new session means a new player enters the game.
 ```
 
 **RTS state change:**
-- Create a new `Player` with `session_id` as the unique key
-- Spawn the player's **Commander unit** (the main agent) at a starting position
-- `source: "startup"` → new player joins; `source: "resume"` → returning player
+- `source: "startup"` → create a new `Player`, spawn Commander at a starting position
+- `source: "resume"` → returning player (treated same as startup if no existing state)
+- `source: "clear"` → **rebirth**: existing player keeps their color; commander resets in-place (`clearedAt` timestamp set, triggers 300ms fade-out + 400ms fade-in animation), all subagents immediately despawned
 - `model` → could influence player color or faction visual
 - `permission_mode` → visual indicator (e.g., "bypassPermissions" = aggressive stance)
 
@@ -32,7 +32,7 @@ A new session means a new player enters the game.
 
 ---
 
-#### SessionEnd → Player Leaves
+#### SessionEnd → Player Leaves (or Clears)
 
 **Hook payload:**
 ```json
@@ -43,11 +43,10 @@ A new session means a new player enters the game.
 ```
 
 **RTS state change:**
-- Mark player as inactive
-- Fade out or remove all units belonging to this player
-- `reason` could trigger different exit animations (logout = orderly retreat, other = sudden disappearance)
+- `reason: "clear"` → **session continues with the same player**. Emits `session_clear` event (renders as a `↺ cleared` divider in the event log in the player's color). Player stays active; a `SessionStart(source="clear")` immediately follows.
+- All other reasons → mark player as disconnected, fade out all units, emit `player_left`.
 
-**What we get:** Clean player lifecycle tracking.
+**What we get:** Clean player lifecycle tracking, with `/clear` distinguished from a true disconnect.
 
 ---
 
@@ -446,6 +445,7 @@ interface Unit {
   // Lifecycle
   spawnedAt: number;
   lastActionAt: number;
+  clearedAt?: number;   // set on /clear rebirth; triggers dissolve/reform animation in renderer
 }
 
 type UnitType =
@@ -570,7 +570,8 @@ type GameEventType =
   | "unit_waiting"
   | "objective_completed"
   | "player_idle"
-  | "player_compact";
+  | "player_compact"
+  | "session_clear";    // /clear boundary: same player, memory wiped (renders as ↺ divider)
 ```
 
 ---
