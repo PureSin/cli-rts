@@ -45,23 +45,32 @@ export class CommanderTooltip {
       ["last seen", timeAgo(player.lastActivityAt)],
     ];
 
+    // Determine what the commander is currently working on
+    let workingOn = "—";
     if (commander.currentAction) {
       const a = commander.currentAction;
-      const target = a.target.split("/").pop() ?? a.target;
-      rows.push(["doing", `${a.toolName}: ${target}`]);
+      workingOn = a.description || `${a.toolName}: ${a.target.split("/").pop() ?? a.target}`;
     }
 
-    this.el.innerHTML = rows.map(([k, v]) =>
+    const statsHtml = rows.map(([k, v]) =>
       `<div><span style="color:#445;display:inline-block;width:64px">${k}</span>` +
       `<span style="color:#aaa">${v}</span></div>`
     ).join("");
+
+    const workingHtml =
+      `<div style="margin-top:5px;padding-top:5px;border-top:1px solid #334">` +
+      `<div style="color:#556;margin-bottom:2px;font-size:10px;letter-spacing:1px">WORKING ON</div>` +
+      `<div style="color:#e8c46a;white-space:normal;word-break:break-word;max-width:190px;line-height:1.5">${workingOn}</div>` +
+      `</div>`;
+
+    this.el.innerHTML = statsHtml + workingHtml;
 
     // Position near cursor, keep within viewport
     const pad = 12;
     let x = screenX + pad;
     let y = screenY + pad;
-    if (x + 210 > window.innerWidth)  x = screenX - 210 - pad;
-    if (y + 260 > window.innerHeight) y = screenY - 260 - pad;
+    if (x + 220 > window.innerWidth)  x = screenX - 220 - pad;
+    if (y + 300 > window.innerHeight) y = screenY - 300 - pad;
 
     this.el.style.left = `${x}px`;
     this.el.style.top  = `${y}px`;
