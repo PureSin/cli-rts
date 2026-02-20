@@ -1,5 +1,7 @@
 import { Application } from "pixi.js";
 import type { GameState } from "./types.js";
+import { DEFAULT_PACK } from "./config.js";
+import { loadPack } from "./assets/AssetLoader.js";
 
 function formatTs(ts: number): string {
   const d = new Date(ts);
@@ -21,6 +23,7 @@ import { MapRenderer } from "./renderer/MapRenderer.js";
 import { MapOverlay } from "./renderer/MapOverlay.js";
 import { UnitPool } from "./renderer/UnitPool.js";
 import { UnitLabelOverlay } from "./renderer/UnitLabelOverlay.js";
+import { PackSelector } from "./ui/PackSelector.js";
 
 declare global {
   interface Window {
@@ -40,6 +43,11 @@ async function loadReplayEntries(): Promise<EventEntry[]> {
 }
 
 async function init() {
+  // Load assets (allow URL override via ?pack=name)
+  const params = new URLSearchParams(window.location.search);
+  const packName = params.get("pack") || DEFAULT_PACK;
+  await loadPack(packName);
+
   // Create PixiJS application
   const app = new Application();
   await app.init({
@@ -106,6 +114,9 @@ async function init() {
   const commanderTooltip = new CommanderTooltip();
   document.getElementById("ui-overlay")!.appendChild(commanderTooltip.el);
   unitPool.setTooltip(commanderTooltip);
+
+  const packSelector = new PackSelector(packName);
+  document.getElementById("ui-overlay")!.appendChild(packSelector.el);
 
   // Center camera on map
   camera.centerOn(500, 500);
