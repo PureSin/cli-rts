@@ -3,6 +3,7 @@ import type { GameState, Unit, PlayerColor, UnitAction, Player } from "../types.
 import { UnitRenderer } from "./UnitRenderer.js";
 import { UnitLabelOverlay } from "./UnitLabelOverlay.js";
 import type { CommanderTooltip } from "../ui/CommanderTooltip.js";
+import type { CommanderToast } from "../ui/CommanderToast.js";
 import { UNIT_MOVE_SPEED } from "../config.js";
 
 interface PoolEntry {
@@ -24,6 +25,7 @@ export class UnitPool {
   private pool = new Map<string, PoolEntry>();
   private labelOverlay: UnitLabelOverlay | null = null;
   private tooltip: CommanderTooltip | null = null;
+  private toast: CommanderToast | null = null;
 
   setLabelOverlay(overlay: UnitLabelOverlay) {
     this.labelOverlay = overlay;
@@ -31,6 +33,10 @@ export class UnitPool {
 
   setTooltip(tooltip: CommanderTooltip) {
     this.tooltip = tooltip;
+  }
+
+  setToast(toast: CommanderToast) {
+    this.toast = toast;
   }
 
   syncUnits(state: GameState) {
@@ -83,6 +89,11 @@ export class UnitPool {
       };
       this.pool.set(unit.id, entry);
       this.container.addChild(renderer.container);
+
+      // Show toast quote when a new commander spawns
+      if (player !== null) {
+        this.toast?.show();
+      }
 
       // Enable hover tooltip on the PixiJS sprite for commander units
       if (player !== null) {
