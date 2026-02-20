@@ -27,6 +27,26 @@ export class Camera {
     return this.world.y;
   }
 
+  onWheel(e: WheelEvent) {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.1 : 0.9;
+    const newZoom = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, this._zoom * factor));
+
+    // Zoom toward cursor position
+    const rect = this.canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const worldX = (mouseX - this.world.x) / this._zoom;
+    const worldY = (mouseY - this.world.y) / this._zoom;
+
+    this._zoom = newZoom;
+    this.world.scale.set(this._zoom);
+
+    this.world.x = mouseX - worldX * this._zoom;
+    this.world.y = mouseY - worldY * this._zoom;
+  }
+
   centerOn(x: number, y: number) {
     this.world.x = this.canvas.width / 2 - x * this._zoom;
     this.world.y = this.canvas.height / 2 - y * this._zoom;
@@ -51,24 +71,6 @@ export class Camera {
       this.canvas.style.cursor = "default";
     });
 
-    this.canvas.addEventListener("wheel", (e) => {
-      e.preventDefault();
-      const factor = e.deltaY < 0 ? 1.1 : 0.9;
-      const newZoom = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, this._zoom * factor));
-
-      // Zoom toward cursor position
-      const rect = this.canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      const worldX = (mouseX - this.world.x) / this._zoom;
-      const worldY = (mouseY - this.world.y) / this._zoom;
-
-      this._zoom = newZoom;
-      this.world.scale.set(this._zoom);
-
-      this.world.x = mouseX - worldX * this._zoom;
-      this.world.y = mouseY - worldY * this._zoom;
-    }, { passive: false });
+    this.canvas.addEventListener("wheel", (e) => this.onWheel(e), { passive: false });
   }
 }
