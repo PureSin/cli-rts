@@ -56,7 +56,8 @@ export class MapOverlay {
             `position:absolute;left:${x + 5}px;top:${y + 2}px;` +
                 `max-width:${width - 10}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;` +
                 `font-family:'Courier New',monospace;font-weight:bold;color:#fff;` +
-                `font-size:${isLeaf ? 13 : 16}px;opacity:${isLeaf ? 0.85 : 1};`;
+                `font-size:${isLeaf ? 13 : 16}px;opacity:${isLeaf ? 0.85 : 1};` +
+                `pointer-events:auto;cursor:text;`;
         labelEl.textContent = region.label;
         this.el.appendChild(labelEl);
         // File list in leaf regions
@@ -68,7 +69,8 @@ export class MapOverlay {
         const listEl = document.createElement("div");
         listEl.style.cssText =
             `position:absolute;left:${x + 6}px;top:${y + 20}px;width:${width - 12}px;overflow:hidden;` +
-                `font-family:'Courier New',monospace;font-size:9px;line-height:${lineHeight}px;`;
+                `font-family:'Courier New',monospace;font-size:9px;line-height:${lineHeight}px;` +
+                `pointer-events:auto;cursor:text;`;
         for (let i = 0; i < Math.min(files.length, maxFiles); i++) {
             const fname = files[i];
             const isActive = activeFiles?.has(fname) ?? false;
