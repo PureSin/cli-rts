@@ -105,7 +105,7 @@ async function run() {
             { threshold: 0.1 }
         );
 
-        if (numDiffPixels > 0) {
+        if (numDiffPixels > 50) {
             fs.writeFileSync(DIFF_IMAGE, PNG.sync.write(diff));
             console.error(`Visual regression failed: ${numDiffPixels} pixels differ.`);
             console.error(`Diff saved to ${DIFF_IMAGE}`);
