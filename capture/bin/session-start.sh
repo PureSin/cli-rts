@@ -31,11 +31,9 @@ fi
 if command -v open > /dev/null 2>&1; then
   # macOS
   open "http://localhost:5175" 2>/dev/null
-  open "http://127.0.0.1:4175/state" 2>/dev/null
 elif command -v xdg-open > /dev/null 2>&1; then
   # Linux
   xdg-open "http://localhost:5175" 2>/dev/null
-  xdg-open "http://127.0.0.1:4175/state" 2>/dev/null
 fi
 
 # 4. Forward the session-start event payload (stdin from hook) to the daemon
