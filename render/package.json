@@ -9,7 +9,8 @@
     "dev:replay": "vite --",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test:visual": "node scripts/visual-test.js"
+    "test:visual": "node scripts/visual-test.js",
+    "test:visual:all": "node scripts/visual-test.js --pack=default && node scripts/visual-test.js --pack=peon"
   },
   "dependencies": {
     "pixi.js": "^8.6.6"

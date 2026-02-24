@@ -138,8 +138,8 @@ export function createUnitGraphics(unitType: UnitType, playerColor: PlayerColor)
     // Since we preloaded, `Sprite.from` should have texture ready or almost ready.
     const sprite = Sprite.from(fullPath);
     sprite.anchor.set(0.5);
-    const scale = def.scale ?? 1.0;
-    sprite.scale.set(scale);
+    sprite.width = 10;
+    sprite.height = 10;
     container.addChild(sprite);
   } else {
     // Shape mode
