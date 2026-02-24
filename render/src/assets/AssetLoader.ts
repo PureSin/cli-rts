@@ -120,7 +120,8 @@ export function createUnitGraphics(unitType: UnitType, playerColor: PlayerColor)
 
   // Player color ring
   const ring = new Graphics();
-  const ringSize = (def.size ?? 12) + 4;
+  const baseSize = def.sprite ? 20 * (def.scale ?? 1) : (def.size ?? 12) * 2;
+  const ringSize = baseSize + 4;
   ring.fill({ color, alpha: 0.3 });
   ring.circle(0, 0, ringSize);
   ring.fill();
@@ -138,13 +139,13 @@ export function createUnitGraphics(unitType: UnitType, playerColor: PlayerColor)
     // Since we preloaded, `Sprite.from` should have texture ready or almost ready.
     const sprite = Sprite.from(fullPath);
     sprite.anchor.set(0.5);
-    sprite.width = 10;
-    sprite.height = 10;
+    sprite.width = baseSize;
+    sprite.height = baseSize;
     container.addChild(sprite);
   } else {
     // Shape mode
     const g = new Graphics();
-    drawShape(g, def.shape, def.size ?? 10, color);
+    drawShape(g, def.shape, (def.size ?? 10) * 2, color);
     container.addChild(g);
   }
 
