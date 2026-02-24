@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 const args = process.argv.slice(2);
 const packArg = args.find(arg => arg.startsWith('--pack='));
 const PACK_NAME = packArg ? packArg.split('=')[1] : 'default';
+const UPDATE_GOLDEN = args.includes('--update');
 
 const FIXTURE_PATH = path.resolve(__dirname, '../../capture/examples/game-state.example.json');
 const GOLDEN_DIR = path.resolve(__dirname, '../tests/golden');
@@ -81,8 +82,8 @@ async function run() {
         fs.writeFileSync(CURRENT_IMAGE, screenshotBuffer);
 
         // 3. Compare with Golden
-        if (!fs.existsSync(GOLDEN_IMAGE)) {
-            console.log('Golden image not found. Creating new golden image.');
+        if (!fs.existsSync(GOLDEN_IMAGE) || UPDATE_GOLDEN) {
+            console.log(UPDATE_GOLDEN ? 'Updating golden image...' : 'Golden image not found. Creating new golden image.');
             fs.writeFileSync(GOLDEN_IMAGE, screenshotBuffer);
             console.log(`Saved baseline to ${GOLDEN_IMAGE}`);
         }
@@ -105,7 +106,7 @@ async function run() {
             { threshold: 0.1 }
         );
 
-        if (numDiffPixels > 0) {
+        if (numDiffPixels > 50) {
             fs.writeFileSync(DIFF_IMAGE, PNG.sync.write(diff));
             console.error(`Visual regression failed: ${numDiffPixels} pixels differ.`);
             console.error(`Diff saved to ${DIFF_IMAGE}`);

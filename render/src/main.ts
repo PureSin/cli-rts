@@ -14,6 +14,7 @@ import { StateSync } from "./state/StateSync.js";
 import { ReplaySync, type EventEntry } from "./state/ReplaySync.js";
 import { ReplayControls } from "./ui/ReplayControls.js";
 import { CommanderTooltip } from "./ui/CommanderTooltip.js";
+import { CommanderToast } from "./ui/CommanderToast.js";
 import { EventLog } from "./ui/EventLog.js";
 import { Legend } from "./ui/Legend.js";
 import { TimelineControls } from "./ui/TimelineControls.js";
@@ -118,6 +119,10 @@ async function init() {
   const commanderTooltip = new CommanderTooltip();
   document.getElementById("ui-overlay")!.appendChild(commanderTooltip.el);
   unitPool.setTooltip(commanderTooltip);
+
+  const commanderToast = new CommanderToast();
+  document.getElementById("ui-overlay")!.appendChild(commanderToast.el);
+  unitPool.setToast(commanderToast);
 
   const packSelector = new PackSelector(packName);
   document.getElementById("ui-overlay")!.appendChild(packSelector.el);
