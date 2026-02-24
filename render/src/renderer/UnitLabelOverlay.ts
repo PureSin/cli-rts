@@ -9,6 +9,7 @@ export class UnitLabelOverlay {
 
   constructor() {
     this.el = document.createElement("div");
+    this.el.dataset.testid = "unit-label-overlay";
     this.el.style.cssText = "transform-origin:0 0;will-change:transform;";
   }
 
@@ -21,6 +22,7 @@ export class UnitLabelOverlay {
     let el = this.labels.get(unitId);
     if (!el) {
       el = document.createElement("div");
+      el.dataset.unitId = unitId;
       el.style.cssText =
         "position:absolute;font-family:'Courier New',monospace;white-space:nowrap;text-align:center;transform:translateX(-50%);";
       this.el.appendChild(el);
