@@ -75,6 +75,10 @@ async function init() {
   const camera = new Camera(canvas);
   app.stage.addChild(camera.world);
 
+  // Forward wheel events from the HTML overlay layer to the camera so zoom
+  // still works when the pointer is over selectable text elements.
+  overlayContainer.addEventListener("wheel", (e) => camera.onWheel(e), { passive: false });
+
   // Renderers
   const mapRenderer = new MapRenderer();
   const unitPool = new UnitPool();
