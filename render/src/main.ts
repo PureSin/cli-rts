@@ -29,6 +29,7 @@ import { PackSelector } from "./ui/PackSelector.js";
 declare global {
   interface Window {
     __REPLAY_MODE__?: boolean;
+    __rts_applyState?: (state: GameState) => void;
   }
 }
 
@@ -130,6 +131,15 @@ async function init() {
   // Center camera on map
   camera.centerOn(500, 500);
 
+  // Push renderers to a given state — shared by all modes and exposed for testing
+  const applyState = (state: GameState) => {
+    mapRenderer.update(state);
+    mapOverlay.update(state);
+    unitPool.syncUnits(state);
+    eventLog.update(state);
+  };
+  window.__rts_applyState = applyState;
+
   // Determine mode and create appropriate state source
   const isReplay = !!window.__REPLAY_MODE__;
   let stateSource: StateSync | ReplaySync;
@@ -143,26 +153,13 @@ async function init() {
     const controls = new ReplayControls(replaySync);
     document.getElementById("ui-overlay")!.appendChild(controls.el);
 
-    replaySync.onChange((state) => {
-      mapRenderer.update(state);
-      mapOverlay.update(state);
-      unitPool.syncUnits(state);
-      eventLog.update(state);
-    });
+    replaySync.onChange(applyState);
     replaySync.start();
   } else {
     const stateSync = new StateSync();
     stateSource = stateSync;
 
     let scrubbing = false;
-
-    // Push renderers to a given state (used by both live and scrub paths)
-    const applyState = (state: GameState) => {
-      mapRenderer.update(state);
-      mapOverlay.update(state);
-      unitPool.syncUnits(state);
-      eventLog.update(state);
-    };
 
     stateSync.onChange((state) => {
       if (scrubbing) return;

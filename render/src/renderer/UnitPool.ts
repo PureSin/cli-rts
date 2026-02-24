@@ -14,6 +14,7 @@ interface PoolEntry {
   targetY: number;
   displayName: string;
   currentAction: UnitAction | null;
+  lastAction: UnitAction | null;  // last non-null action, persists after currentAction clears
   lastClearedAt: number | undefined;
   animClear: { elapsed: number } | null;
   baseAlpha: number;
@@ -82,6 +83,7 @@ export class UnitPool {
         targetY: unit.position.y,
         displayName: unit.displayName,
         currentAction: unit.currentAction,
+        lastAction: unit.currentAction,
         lastClearedAt: unit.clearedAt,
         animClear: null,
         baseAlpha,
@@ -100,7 +102,7 @@ export class UnitPool {
         const capturedEntry = entry;
         renderer.container.eventMode = "static";
         renderer.container.on("pointerenter", (e) => {
-          if (capturedEntry.playerRef) this.tooltip?.show(capturedEntry.playerRef, e.clientX, e.clientY);
+          if (capturedEntry.playerRef) this.tooltip?.show(capturedEntry.playerRef, e.clientX, e.clientY, capturedEntry.lastAction);
         });
         renderer.container.on("pointerleave", () => this.tooltip?.hide());
       }
@@ -118,6 +120,7 @@ export class UnitPool {
     entry.renderer.updateStatus(unit.status, unit.currentAction?.actionType ?? undefined);
     entry.displayName = unit.displayName;
     entry.currentAction = unit.currentAction;
+    if (unit.currentAction !== null) entry.lastAction = unit.currentAction;
 
     // Detect a new clearedAt timestamp → trigger rebirth animation
     if (unit.clearedAt !== undefined && unit.clearedAt !== entry.lastClearedAt) {
@@ -181,7 +184,7 @@ export class UnitPool {
           const t = this.tooltip;
           this.labelOverlay.setHoverable(
             id,
-            (sx, sy) => { if (e.playerRef) t.show(e.playerRef, sx, sy); },
+            (sx, sy) => { if (e.playerRef) t.show(e.playerRef, sx, sy, e.lastAction); },
             () => t.hide(),
           );
         }

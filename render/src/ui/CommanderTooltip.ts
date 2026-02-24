@@ -1,4 +1,4 @@
-import type { Player } from "../types.js";
+import type { Player, UnitAction } from "../types.js";
 
 function timeAgo(ts: number): string {
   const s = Math.floor((Date.now() - ts) / 1000);
@@ -12,6 +12,7 @@ export class CommanderTooltip {
 
   constructor() {
     this.el = document.createElement("div");
+    this.el.dataset.testid = "commander-tooltip";
     this.el.style.cssText = [
       "position:fixed",
       "z-index:20",
@@ -28,7 +29,7 @@ export class CommanderTooltip {
     ].join(";");
   }
 
-  show(player: Player, screenX: number, screenY: number) {
+  show(player: Player, screenX: number, screenY: number, lastAction?: UnitAction | null) {
     const { stats, commander } = player;
     const failStr = stats.toolCallsFailed > 0 ? ` (${stats.toolCallsFailed} ✗)` : "";
 
@@ -45,11 +46,11 @@ export class CommanderTooltip {
       ["last seen", timeAgo(player.lastActivityAt)],
     ];
 
-    // Determine what the commander is currently working on
+    // Show current action, or fall back to the last known action
+    const action = commander.currentAction ?? lastAction ?? null;
     let workingOn = "—";
-    if (commander.currentAction) {
-      const a = commander.currentAction;
-      workingOn = a.description || `${a.toolName}: ${a.target.split("/").pop() ?? a.target}`;
+    if (action) {
+      workingOn = action.description || `${action.toolName}: ${action.target.split("/").pop() ?? action.target}`;
     }
 
     const statsHtml = rows.map(([k, v]) =>

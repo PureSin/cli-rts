@@ -29,7 +29,9 @@ render/public/packs/
     │   │   ├── ready.ogg
     │   │   ├── work.ogg
     │   │   └── attack.ogg
-    │   └── ui/             # UI skin overrides (cursors, frames)
+    │   ├── ui/             # UI skin overrides (cursors, frames)
+    │   └── map/            # Map backgrounds
+    │       └── background.png
 ```
 
 ## Configuration (`manifest.json`)
@@ -58,7 +60,8 @@ The `manifest.json` defines how the pack maps to game entities. It supports inhe
     "ui": {
       "cursor": "assets/ui/orc_gauntlet.png", 
       "font": "LifeCraft"
-    }
+    },
+    "map": "assets/map/background.png"
   }
 }
 ```
