@@ -53,18 +53,46 @@ export class CommanderTooltip {
       workingOn = action.description || `${action.toolName}: ${action.target.split("/").pop() ?? action.target}`;
     }
 
-    const statsHtml = rows.map(([k, v]) =>
-      `<div><span style="color:#445;display:inline-block;width:64px">${k}</span>` +
-      `<span style="color:#aaa">${v}</span></div>`
-    ).join("");
+    this.el.replaceChildren();
 
-    const workingHtml =
-      `<div style="margin-top:5px;padding-top:5px;border-top:1px solid #334">` +
-      `<div style="color:#556;margin-bottom:2px;font-size:10px;letter-spacing:1px">WORKING ON</div>` +
-      `<div style="color:#e8c46a;white-space:normal;word-break:break-word;max-width:190px;line-height:1.5">${workingOn}</div>` +
-      `</div>`;
+    for (const [k, v] of rows) {
+      const row = document.createElement("div");
+      const keyEl = document.createElement("span");
+      keyEl.style.color = "#445";
+      keyEl.style.display = "inline-block";
+      keyEl.style.width = "64px";
+      keyEl.textContent = k;
+      const valEl = document.createElement("span");
+      valEl.style.color = "#aaa";
+      valEl.textContent = v;
+      row.appendChild(keyEl);
+      row.appendChild(valEl);
+      this.el.appendChild(row);
+    }
 
-    this.el.innerHTML = statsHtml + workingHtml;
+    const workingContainer = document.createElement("div");
+    workingContainer.style.marginTop = "5px";
+    workingContainer.style.paddingTop = "5px";
+    workingContainer.style.borderTop = "1px solid #334";
+
+    const header = document.createElement("div");
+    header.style.color = "#556";
+    header.style.marginBottom = "2px";
+    header.style.fontSize = "10px";
+    header.style.letterSpacing = "1px";
+    header.textContent = "WORKING ON";
+
+    const content = document.createElement("div");
+    content.style.color = "#e8c46a";
+    content.style.whiteSpace = "normal";
+    content.style.wordBreak = "break-word";
+    content.style.maxWidth = "190px";
+    content.style.lineHeight = "1.5";
+    content.textContent = workingOn;
+
+    workingContainer.appendChild(header);
+    workingContainer.appendChild(content);
+    this.el.appendChild(workingContainer);
 
     // Position near cursor, keep within viewport
     const pad = 12;

@@ -32,11 +32,22 @@ export class UnitLabelOverlay {
     el.style.left = `${x}px`;
     el.style.top = `${y + 16}px`;
 
-    let html = `<div style="font-size:8px;color:#aaa">${name}</div>`;
+    // Clear and rebuild to avoid XSS from name/actionText
+    el.replaceChildren();
+
+    const nameEl = document.createElement("div");
+    nameEl.style.fontSize = "8px";
+    nameEl.style.color = "#aaa";
+    nameEl.textContent = name;
+    el.appendChild(nameEl);
+
     if (actionText) {
-      html += `<div style="font-size:7px;color:#888">${actionText}</div>`;
+      const actionEl = document.createElement("div");
+      actionEl.style.fontSize = "7px";
+      actionEl.style.color = "#888";
+      actionEl.textContent = actionText;
+      el.appendChild(actionEl);
     }
-    el.innerHTML = html;
   }
 
   /**
